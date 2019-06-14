@@ -2,14 +2,16 @@ package box
 
 import (
 	"context"
+	"encoding/json"
+	"time"
 )
 
 // Token is the token used to send requests to Box.com
 type Token struct {
-	TokenType    string   `json:"token_type"`
-	AccessToken  string   `json:"access_token"`
-	ExpiresIn    int64    `json:"expires_in"` // TODO: We should transcript this in ExpiresAt time.Time
-	RestrictedTo []string `json:"restricted_to"`
+	TokenType    string    `json:"token_type"`
+	AccessToken  string    `json:"access_token"`
+	ExpiresOn    time.Time `json:"expires_on"`
+	RestrictedTo []string  `json:"restricted_to"`
 }
 
 type key int
@@ -34,4 +36,29 @@ func TokenFromContext(ctx context.Context) (*Token) {
 		return nil
 	}
 	return value.(*Token)
+}
+
+// IsValid tells if the token is valid and not expired
+func (token Token) IsValid() bool {
+	return len(token.AccessToken) > 0 && time.Now().UTC().Before(token.ExpiresOn)
+}
+
+// UnmarshalJSON decodes JSON
+func (token *Token) UnmarshalJSON(payload []byte) (err error) {
+	type surrogate Token
+	var inner struct {
+		surrogate
+		ExpiresIn int64 `json:"expires_in"`
+	}
+	if err = json.Unmarshal(payload, &inner); err != nil {
+		return err
+	}
+	*token = Token(inner.surrogate)
+	if token.TokenType == "bearer" {
+		token.TokenType = "Bearer"
+	}
+	if inner.ExpiresIn > 0 {
+		token.ExpiresOn = time.Now().UTC().Add(time.Duration(inner.ExpiresIn) * time.Second)
+	}
+	return
 }

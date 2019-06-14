@@ -39,8 +39,7 @@ type AppAuth struct {
 
 // IsAuthenticated tells if the client is authenticated
 func (module *Auth) IsAuthenticated() bool {
-	//TODO: Add expiration...
-	return module.Token != nil && len(module.Token.AccessToken) > 0
+	return module.Token != nil && module.Token.IsValid()
 }
 
 // Authenticate authenticates with the given credentials
@@ -87,9 +86,6 @@ func (module *Auth) Authenticate(ctx context.Context, creds Credentials) (err er
 		return
 	}
 	// TODO: if we get an invalid_grant: https://github.com/box/box-node-sdk/blob/1d51f676b1323135891a70d470e2c9de97be9437/lib/token-manager.js#L216
-	if token.TokenType == "bearer" {
-		token.TokenType = "Bearer"
-	}
 	module.Token = &token
 	return
 }
