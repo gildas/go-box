@@ -45,7 +45,7 @@ func (module *Auth) IsAuthenticated() bool {
 
 // Authenticate authenticates with the given credentials
 // Currently only AppAuth is supported
-func (module *Auth) Authenticate(creds Credentials) (err error) {
+func (module *Auth) Authenticate(ctx context.Context, creds Credentials) (err error) {
 	if module.IsAuthenticated() {
 		return nil
 	}
@@ -73,7 +73,6 @@ func (module *Auth) Authenticate(creds Credentials) (err error) {
 		return fmt.Errorf("Failed to sign the token. Error: %s", err)
 	}
 
-	ctx   := context.Background()
 	token := Token{}
 	if _, err = module.Client.sendRequest(ctx, &requestOptions{
 		Method:     "POST",
