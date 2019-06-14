@@ -75,7 +75,7 @@ func (module *Auth) Authenticate(creds Credentials) (err error) {
 
 	ctx   := context.Background()
 	token := Token{}
-	if err = module.Client.sendRequest(ctx, &requestOptions{
+	if _, err = module.Client.sendRequest(ctx, &requestOptions{
 		Method:     "POST",
 		Path:       "https://api.box.com/oauth2/token", 
 		Parameters: map[string]string{

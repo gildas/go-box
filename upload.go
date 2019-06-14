@@ -53,7 +53,7 @@ func (module *Files) Upload(ctx context.Context, options *UploadOptions) (*FileC
 	}
 
 	results := FileCollection{}
-	if err := module.Client.sendRequest(ctx, &requestOptions{
+	if _, err := module.Client.sendRequest(ctx, &requestOptions{
 		Method:     "POST",
 		Path:       "https://upload.box.com/api/2.0/files/content", 
 		Parameters: map[string]string{

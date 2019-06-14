@@ -77,7 +77,7 @@ func (module *SharedLinks) Create(ctx context.Context, entry *FileEntry, options
 	// TODO: Validate Access (open, company, collaborators)
 
 	result := FileEntry{}
-	if err := module.Client.sendRequest(ctx, &requestOptions{
+	if _, err := module.Client.sendRequest(ctx, &requestOptions{
 		Method:  "PUT",
 		Path:    fmt.Sprintf("https://api.box.com/2.0/files/%s?fields=shared_link", entry.ID),
 		Payload: *options,

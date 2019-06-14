@@ -87,7 +87,7 @@ func (module *Folders) Create(ctx context.Context, entry *FolderEntry) (*FolderE
 	}
 
 	result := FolderEntry{}
-	if err := module.Client.sendRequest(ctx, &requestOptions{
+	if _, err := module.Client.sendRequest(ctx, &requestOptions{
 		Method: "POST",
 		Path:   "https://api.box.com/2.0/folders",
 		Payload: struct {
@@ -108,10 +108,11 @@ func (module *Folders) Delete(ctx context.Context, entry *FolderEntry) error {
 	if !module.Client.IsAuthenticated() {
 		return fmt.Errorf("Not Authenticated")
 	}
-	return module.Client.sendRequest(ctx, &requestOptions{
+	_, err := module.Client.sendRequest(ctx, &requestOptions{
 		Method: "DELETE",
 		Path:   "https://api.box.com/2.0/folders/"+entry.ID+"?recursive=true",
 	}, nil)
+	return err
 }
 
 // FindByID retrieves a folder by its id
@@ -125,7 +126,7 @@ func(module *Folders) FindByID(ctx context.Context, folderID string) (*FolderEnt
 	}
 
 	result := FolderEntry{}
-	if err := module.Client.sendRequest(ctx, &requestOptions{
+	if _, err := module.Client.sendRequest(ctx, &requestOptions{
 		Method: "GET",
 		Path:   "https://api.box.com/2.0/folders/" + folderID,
 	}, &result); err != nil {
@@ -146,7 +147,7 @@ func (module *Folders) FindByName(ctx context.Context, name string) (*FolderEntr
 
 	// First get the root folder
 	root := FolderEntry{}
-	if err := module.Client.sendRequest(ctx, &requestOptions{
+	if _, err := module.Client.sendRequest(ctx, &requestOptions{
 		Method: "GET",
 		Path:   "https://api.box.com/2.0/folders/0",
 	}, &root); err != nil {

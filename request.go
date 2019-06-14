@@ -33,7 +33,7 @@ type requestOptions struct {
 }
 
 // sendRequest sends an HTTP request to Box.com's API
-func (client *Client) sendRequest(ctx context.Context, options *requestOptions, results interface{}) (err error) {
+func (client *Client) sendRequest(ctx context.Context, options *requestOptions, results interface{}) (result io.Reader, err error) {
 	if len(options.RequestID) == 0 {
 		options.RequestID = uuid.Must(uuid.NewRandom()).String()
 	}
@@ -42,7 +42,7 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	// Building the request body
 	reqContent, reqContentSize, err := client.buildReqContent(log, options)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Sanitizing the given options
@@ -60,7 +60,7 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	// Building a new HTTP request
 	req, err := http.NewRequest(options.Method, options.Path, reqContent)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Setting request headers
@@ -94,9 +94,11 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	log = log.Record("duration", duration.Seconds())
 	if err != nil {
 		log.Errorf("Failed to send request", err)
-		return err
+		return nil, err
 	}
 	defer res.Body.Close()
+
+	boxRequestID := res.Header["box-request-id"]
 
 	// Reading the response body
 	resBody, err := ioutil.ReadAll(res.Body)
@@ -104,7 +106,7 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 		log.Errorf("Failed to read response body", err)
 		return
 	}
-	log.Debugf("Response in %s\nproto: %s,\nstatus: %s,\nheaders: %#v", duration, res.Proto, res.Status, res.Header)
+	log.Record("boxreqid", boxRequestID).Debugf("Response in %s\nproto: %s,\nstatus: %s,\nheaders: %#v", duration, res.Proto, res.Status, res.Header)
 	// TODO: Cap this! as the body can be really big and the log will suffer a great deal!
 	log.Tracef("Response body: %s", string(resBody))
 
@@ -113,20 +115,20 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	if res.StatusCode >= 400 {
 		requestError := RequestError{}
 		if err = json.Unmarshal(resBody, &requestError); err == nil {
-			return requestError
+			return nil, requestError
 		}
-		return fmt.Errorf("%s", res.Status)
+		return nil, fmt.Errorf("%s", res.Status)
 	}
 
 	if results != nil {
 		err = json.Unmarshal(resBody, results)
 		if err != nil {
 			log.Errorf("Failed to decode response", err)
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return bytes.NewBuffer(resBody), nil
 }
 
 // buildReqContent build the request body
