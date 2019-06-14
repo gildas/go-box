@@ -1,9 +1,11 @@
 package box
 
 import (
-	"strings"
-	"fmt"
 	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
+	"time"
 	"github.com/gildas/go-core"
 )
 
@@ -37,12 +39,12 @@ type FolderEntry struct {
 	Tags               []string       `json:"tags"`
 	SyncState          string         `json:"sync_state"`
 
-	CreatedAt          core.Time      `json:"created_at,omitempty"`
-	ModifiedAt         core.Time      `json:"modified_at,omitempty"`
-	TrashedAt          core.Time      `json:"trashed_at,omitempty"`
-	PurgedAt           core.Time      `json:"purged_at,omitempty"`
-	ContentCreatedAt   core.Time      `json:"content_created_at,omitempty"`
-	ContentModifiedAt  core.Time      `json:"content_modified_at,omitempty"`
+	CreatedAt          time.Time      `json:"-"`
+	ModifiedAt         time.Time      `json:"-"`
+	TrashedAt          time.Time      `json:"-"`
+	PurgedAt           time.Time      `json:"-"`
+	ContentCreatedAt   time.Time      `json:"-"`
+	ContentModifiedAt  time.Time      `json:"-"`
 	CreatedBy          UserEntry      `json:"created_by"`
 	ModifiedBy         UserEntry      `json:"modified_by"`
 	OwnedBy            UserEntry      `json:"owned_by"`
@@ -161,4 +163,51 @@ func (module *Folders) FindByName(ctx context.Context, name string) (*FolderEntr
 		}
 	}
 	return nil, NotFoundError
+}
+
+// MarshalJSON marshals this into JSON
+func (folder FolderEntry) MarshalJSON() ([]byte, error) {
+	type surrogate FolderEntry
+	return json.Marshal(struct {
+		surrogate
+		CA  core.Time `json:"created_at,omitempty"`
+		MA  core.Time `json:"modified_at,omitempty"`
+		TA  core.Time `json:"trashed_at,omitempty"`
+		PA  core.Time `json:"purged_at,omitempty"`
+		CCA core.Time `json:"content_created_at,omitempty"`
+		CMA core.Time `json:"content_modified_at,omitempty"`
+	}{
+		surrogate: surrogate(folder),
+		CA:  (core.Time)(folder.CreatedAt),
+		MA:  (core.Time)(folder.ModifiedAt),
+		TA:  (core.Time)(folder.TrashedAt),
+		PA:  (core.Time)(folder.PurgedAt),
+		CCA: (core.Time)(folder.ContentCreatedAt),
+		CMA: (core.Time)(folder.ContentModifiedAt),
+	})
+}
+
+// UnmarshalJSON decodes JSON
+func (folder *FolderEntry) UnmarshalJSON(payload []byte) (err error) {
+	type surrogate FolderEntry
+	var inner struct {
+		surrogate
+		CA  core.Time `json:"created_at,omitempty"`
+		MA  core.Time `json:"modified_at,omitempty"`
+		TA  core.Time `json:"trashed_at,omitempty"`
+		PA  core.Time `json:"purged_at,omitempty"`
+		CCA core.Time `json:"content_created_at,omitempty"`
+		CMA core.Time `json:"content_modified_at,omitempty"`
+	}
+	if err = json.Unmarshal(payload, &inner); err != nil {
+		return err
+	}
+	*folder = FolderEntry(inner.surrogate)
+	folder.CreatedAt  = (time.Time)(inner.CA)
+	folder.ModifiedAt = (time.Time)(inner.MA)
+	folder.TrashedAt  = (time.Time)(inner.TA)
+	folder.PurgedAt   = (time.Time)(inner.PA)
+	folder.ContentCreatedAt  = (time.Time)(inner.CCA)
+	folder.ContentModifiedAt = (time.Time)(inner.CMA)
+	return
 }

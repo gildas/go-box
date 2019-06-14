@@ -1,6 +1,8 @@
 package box
 
 import (
+	"encoding/json"
+	"net/url"
 	"strconv"
 	"strings"
 	"github.com/gildas/go-core"
@@ -14,7 +16,8 @@ type RequestError struct {
 	Message     string       `json:"message"`
 	RequestID   string       `json:"request_id"`
 	ContextInfo *ContextInfo `json:"context_info"`
-	HelpURL     *core.URL    `json:"help_url"`
+	LocationURL *url.URL     `json:"-"`
+	HelpURL     *url.URL     `json:"-"`
 }
 
 // ContextInfo gives some contextual information about the current error
@@ -22,6 +25,37 @@ type ContextInfo struct {
 	// TODO: Find the best representation of this thing
 	// https://developer.box.com/reference is not clear if it is errors or conflicts
 	Errors []byte `json:"errors"`
+}
+
+// MarshalJSON marshals this into JSON
+func (e RequestError) MarshalJSON() ([]byte, error) {
+	type surrogate RequestError
+	return json.Marshal(struct {
+		surrogate
+		L *core.URL `json:"location_url"`
+		H *core.URL `json:"help_url"`
+	}{
+		surrogate: surrogate(e),
+		L:         (*core.URL)(e.LocationURL),
+		H:         (*core.URL)(e.HelpURL),
+	})
+}
+
+// UnmarshalJSON decodes JSON
+func (e *RequestError) UnmarshalJSON(payload []byte) (err error) {
+	type surrogate RequestError
+	var inner struct {
+		surrogate
+		L *core.URL `json:"location_url"`
+		H *core.URL `json:"help_url"`
+	}
+	if err = json.Unmarshal(payload, &inner); err != nil {
+		return err
+	}
+	*e = RequestError(inner.surrogate)
+	e.LocationURL = (*url.URL)(inner.L)
+	e.HelpURL     = (*url.URL)(inner.H)
+	return
 }
 
 // Error gives a string representation of this error

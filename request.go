@@ -33,7 +33,7 @@ type requestOptions struct {
 }
 
 // sendRequest sends an HTTP request to Box.com's API
-func (client *Client) sendRequest(ctx context.Context, options *requestOptions, results interface{}) (result io.Reader, err error) {
+func (client *Client) sendRequest(ctx context.Context, options *requestOptions, results interface{}) (result io.ReadCloser, err error) {
 	if len(options.RequestID) == 0 {
 		options.RequestID = uuid.Must(uuid.NewRandom()).String()
 	}
@@ -112,6 +112,18 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 
 	// Processing the response
 	// TODO: Process redirections (3xx)
+	if res.StatusCode == http.StatusFound {
+		locationURL, err := res.Location()
+		if err != nil {
+			return nil, RequestError{
+				Type:        "error",
+				ID:          "found_at_location",
+				StatusCode:  res.StatusCode,
+				Message:     res.Status,
+				LocationURL: locationURL,
+			}
+		}
+	}
 	if res.StatusCode >= 400 {
 		requestError := RequestError{}
 		if err = json.Unmarshal(resBody, &requestError); err == nil {
@@ -127,8 +139,7 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 			return nil, err
 		}
 	}
-
-	return bytes.NewBuffer(resBody), nil
+	return ioutil.NopCloser(bytes.NewReader(resBody)), nil
 }
 
 // buildReqContent build the request body

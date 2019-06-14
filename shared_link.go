@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"time"
 
 	"github.com/gildas/go-core"
 )
@@ -15,12 +17,12 @@ type SharedLinks struct {
 
 // SharedLink represents a shared link
 type SharedLink struct {
-	URL               *core.URL   `json:"url"`
-	DownloadURL       *core.URL   `json:"download_url"`
-	VanityURL         *core.URL   `json:"vanity_url"`
+	URL               *url.URL    `json:"-"`
+	DownloadURL       *url.URL    `json:"-"`
+	VanityURL         *url.URL    `json:"-"`
 	EffectiveAccess   string      `json:"effective_access"`
 	IsPasswordEnabled bool        `json:"is_password_enabled"`
-	UnSharedAt        *core.Time  `json:"unshared_at"`
+	UnsharedAt        *time.Time  `json:"-"`
 	DownloadCount     int         `json:"download_count"`
 	PreviewCount      int         `json:"preview_count"`
 	Access            string      `json:"access"`
@@ -36,24 +38,9 @@ type Permissions struct {
 // SharedLinkOptions contains the shared link options
 type SharedLinkOptions struct {
 	Access      string      `json:"access"`
-	UnsharedAt  *core.Time  `json:"unshared_at,omitempty"`
+	UnsharedAt  *time.Time  `json:"-"`
 	Password    string      `json:"password,omitempty"`
 	Permissions Permissions `json:"permissions,omitempty"`
-}
-
-// MarshalJSON marshals this into JSON
-func (slo SharedLinkOptions) MarshalJSON() ([]byte, error) {
-	type surrogate SharedLinkOptions
-	type sharedLink struct {
-		surrogate
-	}
-	return json.Marshal(struct {
-		SL sharedLink `json:"shared_link"`
-	}{
-		sharedLink{
-			surrogate(slo),
-		},
-	})
 }
 
 // Create creates a shared link for a given File entry
@@ -85,4 +72,60 @@ func (module *SharedLinks) Create(ctx context.Context, entry *FileEntry, options
 		return nil ,err
 	}
 	return result.SharedLink, nil
+}
+
+// MarshalJSON marshals this into JSON
+func (slo SharedLinkOptions) MarshalJSON() ([]byte, error) {
+	type surrogate SharedLinkOptions
+	type sharedLink struct {
+		surrogate
+		UA *core.Time `json:"unshared_at,omitempty"`
+	}
+	return json.Marshal(struct {
+		SL sharedLink `json:"shared_link"`
+	}{
+		sharedLink{
+			surrogate(slo),
+			(*core.Time)(slo.UnsharedAt),
+		},
+	})
+}
+
+// MarshalJSON marshals this into JSON
+func (link SharedLink) MarshalJSON() ([]byte, error) {
+	type surrogate SharedLink
+	return json.Marshal(struct {
+		surrogate
+		U  *core.URL  `json:"url"`
+		DU *core.URL  `json:"download_url"`
+		VU *core.URL  `json:"vanity_url"`
+		UA *core.Time `json:"unshared_at"`
+	}{
+		surrogate: surrogate(link),
+		U:  (*core.URL)(link.URL),
+		DU: (*core.URL)(link.DownloadURL),
+		VU: (*core.URL)(link.VanityURL),
+		UA: (*core.Time)(link.UnsharedAt),
+	})
+}
+
+// UnmarshalJSON decodes JSON
+func (link *SharedLink) UnmarshalJSON(payload []byte) (err error) {
+	type surrogate SharedLink
+	var inner struct {
+		surrogate
+		U  *core.URL  `json:"url"`
+		DU *core.URL  `json:"download_url"`
+		VU *core.URL  `json:"vanity_url"`
+		UA *core.Time `json:"unshared_at"`
+	}
+	if err = json.Unmarshal(payload, &inner); err != nil {
+		return err
+	}
+	*link = SharedLink(inner.surrogate)
+	link.URL         = (*url.URL)(inner.U)
+	link.DownloadURL = (*url.URL)(inner.DU)
+	link.VanityURL   = (*url.URL)(inner.VU)
+	link.UnsharedAt  = (*time.Time)(inner.UA)
+	return
 }
