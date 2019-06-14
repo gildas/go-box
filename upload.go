@@ -2,6 +2,7 @@ package box
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 )
 
@@ -11,6 +12,7 @@ type UploadOptions struct {
 	Filename    string
 	ContentType string
 	Content     []byte
+	Payload     interface{}
 }
 
 // Upload uploads data to Box.com
@@ -21,6 +23,16 @@ func (module *Files) Upload(ctx context.Context, options *UploadOptions) (*FileC
 	if options == nil {
 		return nil, fmt.Errorf("Missing options")
 	}
+
+	if options.Payload != nil {
+		payload, err := json.Marshal(options.Payload)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to encode payload into JSON, %s", err)
+		}
+		options.Content     = payload
+		options.ContentType = "application/json"
+	}
+
 	if len(options.Content) == 0 {
 		return nil, fmt.Errorf("Missing Content")
 	}
