@@ -1,14 +1,8 @@
 package box
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"mime/multipart"
-	"net/http"
-	"time"
 )
 
 // UploadOptions contains the options for uploading data
@@ -20,8 +14,8 @@ type UploadOptions struct {
 }
 
 // Upload uploads data to Box.com
-func (client *Client) Upload(ctx context.Context, options *UploadOptions) (*FileCollection, error) {
-	log := client.Logger.Scope("upload").Child()
+func (module *Files) Upload(ctx context.Context, options *UploadOptions) (*FileCollection, error) {
+	//log := module.Client.Logger.Scope("upload").Child()
 
 	// TODO: Create real errors
 	if options == nil {
@@ -33,7 +27,7 @@ func (client *Client) Upload(ctx context.Context, options *UploadOptions) (*File
 	if len(options.Filename) == 0 {
 		return nil, fmt.Errorf("Missing filename")
 	}
-	if client.Token == nil {
+	if !module.Client.IsAuthenticated() {
 		return nil, fmt.Errorf("Not Authenticated")
 	}
 
@@ -41,56 +35,24 @@ func (client *Client) Upload(ctx context.Context, options *UploadOptions) (*File
 		options.ContentType = "application/octet-stream"
 	}
 
-	reqBody := &bytes.Buffer{}
-	writer  := multipart.NewWriter(reqBody)
-
-	writer.WriteField("name", options.Filename)
-	if options.Parent == nil {
-		writer.WriteField("parent_id", "0")
-	} else {
-		writer.WriteField("parent_id", options.Parent.ID)
-	}
-	part, _ := writer.CreateFormFile("file", options.Filename)
-	_, err  := part.Write(options.Content)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to write content to the form: %s", err)
-	}
-	writer.Close()
-
-	req, _ := http.NewRequest("POST", "https://upload.box.com/api/2.0/files/content", reqBody)
-	req.Header.Add("User-Agent",    "BOX Client v." + VERSION)
-	req.Header.Add("Content-Type",  writer.FormDataContentType())
-	req.Header.Add("Authorization", "Bearer " + client.Token.AccessToken)
-
-	httpclient := http.DefaultClient
-	if client.Proxy != nil {
-		httpclient.Transport = &http.Transport{Proxy: http.ProxyURL(client.Proxy)}
+	parentID := "0"
+	if options.Parent != nil && len(options.Parent.ID) > 0 {
+		parentID = options.Parent.ID
 	}
 
-	log.Debugf("HTTP POST %s", "https://api.box.com/oauth2/token")
-	start    := time.Now()
-	res, err := httpclient.Do(req)
-	duration := time.Since(start)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to send request to Box API: %s", err)
+	results := FileCollection{}
+	if err := module.Client.sendRequest(ctx, &requestOptions{
+		Method:     "POST",
+		Path:       "https://upload.box.com/api/2.0/files/content", 
+		Parameters: map[string]string{
+			"name":      options.Filename,
+			"parent_id": parentID,
+			">file":     options.Filename,
+		},
+		Content:     options.Content,
+		ContentType: options.ContentType,
+	}, &results); err != nil {
+		return nil, err
 	}
-	defer res.Body.Close()
-
-	resBody, err := ioutil.ReadAll(res.Body) // read the body no matter what
-	if err != nil {
-		return nil, fmt.Errorf("Failed to read response body: %s", err)
-	}
-	log.Debugf("Response in %s\nproto: %s,\nstatus: %s,\nheaders: %#v", duration, res.Proto, res.Status, res.Header)
-	log.Tracef("Response body: %s", string(resBody))
-
-	if res.StatusCode >= 300 {
-		// TODO: Handle token expiration
-		return nil, fmt.Errorf("HTTP Error: %s", res.Status)
-	}
-
-	result := FileCollection{}
-	if err = json.Unmarshal(resBody, &result); err != nil {
-		return nil, fmt.Errorf("Failed to decode response body: %s", err)
-	}
-	return &result, nil
+	return &results, nil
 }

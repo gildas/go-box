@@ -1,16 +1,37 @@
 package box
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"time"
 
 	"github.com/gildas/go-core"
 )
+
+// SharedLinks module
+type SharedLinks struct {
+	*Client
+}
+
+// SharedLink represents a shared link
+type SharedLink struct {
+	URL               *core.URL   `json:"url"`
+	DownloadURL       *core.URL   `json:"download_url"`
+	VanityURL         *core.URL   `json:"vanity_url"`
+	EffectiveAccess   string      `json:"effective_access"`
+	IsPasswordEnabled bool        `json:"is_password_enabled"`
+	UnSharedAt        *core.Time  `json:"unshared_at"`
+	DownloadCount     int         `json:"download_count"`
+	PreviewCount      int         `json:"preview_count"`
+	Access            string      `json:"access"`
+	Permissions       Permissions `json:"permissions"`
+}
+
+// Permissions exresses what is allowed on objects
+type Permissions struct {
+	CanDownload bool `json:"can_download,omitempty	"`
+	CanPreview  bool `json:"can_preview,omitempty"`
+}
 
 // SharedLinkOptions contains the shared link options
 type SharedLinkOptions struct {
@@ -35,9 +56,9 @@ func (slo SharedLinkOptions) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// CreateSharedLink creates a shared link for a given File entry
-func (client *Client) CreateSharedLink(ctx context.Context, entry *FileEntry, options *SharedLinkOptions) (*SharedLink, error) {
-	log := client.Logger.Scope("createsharedlink").Child()
+// Create creates a shared link for a given File entry
+func (module *SharedLinks) Create(ctx context.Context, entry *FileEntry, options *SharedLinkOptions) (*SharedLink, error) {
+	log := module.Client.Logger.Scope("createsharedlink").Child()
 	if entry == nil {
 		return nil, fmt.Errorf("Missing entry")
 	}
@@ -49,50 +70,19 @@ func (client *Client) CreateSharedLink(ctx context.Context, entry *FileEntry, op
 	}
 
 	// TODO: Create real errors
-	if client.Token == nil {
+	if !module.Client.IsAuthenticated() {
 		return nil, fmt.Errorf("Not Authenticated")
 	}
 
 	// TODO: Validate Access (open, company, collaborators)
 
-	payload, err := json.Marshal(options)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to marshal sharedLink: %s", err)
-	}
-	log.Record("req", options).Tracef("Payload: %s", string(payload))
-	req, _ := http.NewRequest("PUT", fmt.Sprintf("https://api.box.com/2.0/files/%s?fields=shared_link", entry.ID), bytes.NewBuffer(payload))
-	req.Header.Add("User-Agent",    "BOX Client v." + VERSION)
-	req.Header.Add("Content-Type",  "application/json")
-	req.Header.Add("Authorization", "Bearer " + client.Token.AccessToken)
-
-	httpclient := http.DefaultClient
-	if client.Proxy != nil {
-		httpclient.Transport = &http.Transport{Proxy: http.ProxyURL(client.Proxy)}
-	}
-
-	start    := time.Now()
-	res, err := httpclient.Do(req)
-	duration := time.Since(start)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to send request to Box API: %s", err)
-	}
-	defer res.Body.Close()
-
-	resBody, err := ioutil.ReadAll(res.Body) // read the body no matter what
-	if err != nil {
-		return nil, fmt.Errorf("Failed to read response body: %s", err)
-	}
-	log.Debugf("Response in %s\nproto: %s,\nstatus: %s,\nheaders: %#v", duration, res.Proto, res.Status, res.Header)
-	log.Tracef("Response body: %s", string(resBody))
-
-	if res.StatusCode >= 300 {
-		// TODO: Handle token expiration
-		return nil, fmt.Errorf("HTTP Error: %s", res.Status)
-	}
-
 	result := FileEntry{}
-	if err = json.Unmarshal(resBody, &result); err != nil {
-		return nil, fmt.Errorf("Failed to decode response body: %s", err)
+	if err := module.Client.sendRequest(ctx, &requestOptions{
+		Method:  "PUT",
+		Path:    fmt.Sprintf("https://api.box.com/2.0/files/%s?fields=shared_link", entry.ID),
+		Payload: *options,
+	}, &result); err != nil {
+		return nil ,err
 	}
 	log.Record("result", result).Tracef("Got result")
 	return result.SharedLink, nil
