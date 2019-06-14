@@ -58,7 +58,7 @@ func (slo SharedLinkOptions) MarshalJSON() ([]byte, error) {
 
 // Create creates a shared link for a given File entry
 func (module *SharedLinks) Create(ctx context.Context, entry *FileEntry, options *SharedLinkOptions) (*SharedLink, error) {
-	log := module.Client.Logger.Scope("createsharedlink").Child()
+	//log := module.Client.Logger.Scope("createsharedlink").Child()
 	if entry == nil {
 		return nil, fmt.Errorf("Missing entry")
 	}
@@ -84,6 +84,5 @@ func (module *SharedLinks) Create(ctx context.Context, entry *FileEntry, options
 	}, &result); err != nil {
 		return nil ,err
 	}
-	log.Record("result", result).Tracef("Got result")
 	return result.SharedLink, nil
 }

@@ -91,14 +91,13 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	start    := time.Now()
 	res, err := httpclient.Do(req)
 	duration := time.Since(start)
-	log = log.Record("duration", duration.Seconds())
+	boxRequestID := strings.Join(res.Header["Box-Request-Id"], "")
+	log = log.Record("duration", duration.Seconds()).Record("boxreqid", boxRequestID)
 	if err != nil {
 		log.Errorf("Failed to send request", err)
 		return nil, err
 	}
 	defer res.Body.Close()
-
-	boxRequestID := res.Header["box-request-id"]
 
 	// Reading the response body
 	resBody, err := ioutil.ReadAll(res.Body)
@@ -106,9 +105,10 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 		log.Errorf("Failed to read response body", err)
 		return
 	}
-	log.Record("boxreqid", boxRequestID).Debugf("Response in %s\nproto: %s,\nstatus: %s,\nheaders: %#v", duration, res.Proto, res.Status, res.Header)
+	log.Debugf("Response %s in %s", res.Status, duration)
+	log.Tracef("Response Headers: %#v", res.Header)
 	// TODO: Cap this! as the body can be really big and the log will suffer a great deal!
-	log.Tracef("Response body: %s", string(resBody))
+	log.Tracef("Response body (%d bytes): %s", len(resBody), string(resBody))
 
 	// Processing the response
 	// TODO: Process redirections (3xx)
@@ -191,7 +191,6 @@ func (client *Client) buildReqContent(log *logger.Logger, options *requestOption
 		if len(options.ContentType) == 0 {
 			options.ContentType = "application/json"
 		}
-		client.Logger.Scope("request").Record("payload", string(payload)).Tracef("Marshaled payload")
 	} else if len(options.Content) > 0 {
 		body = bytes.NewBuffer(options.Content)
 		size = len(options.Content)
