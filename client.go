@@ -11,6 +11,7 @@ type Client struct {
 	Proxy       *url.URL       `json:"proxy"`
 	Auth        *Auth          `json:"-"`
 	Files       *Files         `json:"-"`
+	Folders     *Folders       `json:"-"`
 	SharedLinks *SharedLinks   `json:"-"`
 	Logger      *logger.Logger `json:"-"`
 }
@@ -26,6 +27,7 @@ func NewClient(ctx context.Context) (*Client) {
 	}
 	client.Auth        = &Auth{client, TokenFromContext(ctx)}
 	client.Files       = &Files{client}
+	client.Folders     = &Folders{client}
 	client.SharedLinks = &SharedLinks{client}
 	return client
 }
