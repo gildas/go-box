@@ -91,7 +91,7 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	start    := time.Now()
 	res, err := httpclient.Do(req)
 	duration := time.Since(start)
-	boxRequestID := strings.Join(res.Header["Box-Request-Id"], "")
+	boxRequestID := res.Header.Get("Box-Request-Id")
 	log = log.Record("duration", duration.Seconds()).Record("boxreqid", boxRequestID)
 	if err != nil {
 		log.Errorf("Failed to send request", err)
