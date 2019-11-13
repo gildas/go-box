@@ -17,7 +17,7 @@ type UploadOptions struct {
 
 // Upload uploads data to Box.com
 func (module *Files) Upload(ctx context.Context, options *UploadOptions) (*FileCollection, error) {
-	//log := module.Client.Logger.Scope("upload").Child()
+	//log := module.Client.Logger.Scope("upload")
 
 	// TODO: Create real errors
 	if options == nil {

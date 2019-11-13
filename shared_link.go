@@ -31,7 +31,7 @@ type SharedLink struct {
 
 // Permissions exresses what is allowed on objects
 type Permissions struct {
-	CanDownload bool `json:"can_download,omitempty	"`
+	CanDownload bool `json:"can_download,omitempty"`
 	CanPreview  bool `json:"can_preview,omitempty"`
 }
 
@@ -45,7 +45,7 @@ type SharedLinkOptions struct {
 
 // Create creates a shared link for a given File entry
 func (module *SharedLinks) Create(ctx context.Context, entry *FileEntry, options *SharedLinkOptions) (*SharedLink, error) {
-	//log := module.Client.Logger.Scope("createsharedlink").Child()
+	//log := module.Client.Logger.Scope("createsharedlink")
 	if entry == nil {
 		return nil, fmt.Errorf("Missing entry")
 	}

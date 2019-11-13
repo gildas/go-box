@@ -68,7 +68,7 @@ type PathEntry struct {
 	Name       string `json:"name"`
 	ETag       string `json:"etag"`
 	SequenceID string `json:"sequence_id"`
-	Checksum   string `json:"sha1,omitepmty"`
+	Checksum   string `json:"sha1,omitempty"`
 }
 
 // UserEntry represents a User in a FileEntry

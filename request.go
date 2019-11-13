@@ -37,7 +37,7 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	if len(options.RequestID) == 0 {
 		options.RequestID = uuid.Must(uuid.NewRandom()).String()
 	}
-	log := client.Logger.Scope("request").Record("reqid", options.RequestID).Child()
+	log := client.Logger.Child("", "request", "reqid", options.RequestID)
 
 	// Building the request body
 	reqContent, reqContentSize, err := client.buildReqContent(log, options)
@@ -92,7 +92,7 @@ func (client *Client) sendRequest(ctx context.Context, options *requestOptions, 
 	res, err := httpclient.Do(req)
 	duration := time.Since(start)
 	boxRequestID := res.Header.Get("Box-Request-Id")
-	log = log.Record("duration", duration.Seconds()).Record("boxreqid", boxRequestID)
+	log = log.Records("duration", duration.Seconds(), "boxreqid", boxRequestID)
 	if err != nil {
 		log.Errorf("Failed to send request", err)
 		return nil, err

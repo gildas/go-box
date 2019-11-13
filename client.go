@@ -18,13 +18,12 @@ type Client struct {
 
 // NewClient instantiates a new Client
 func NewClient(ctx context.Context) (*Client) {
+	client := &Client{}
 	log, err := logger.FromContext(ctx)
 	if err != nil {
 		log = logger.Create("Box")
 	}
-	client := &Client{
-		Logger: log.Topic("box").Scope("box").Child(),
-	}
+	client.Logger      = log.Child("box", "box")
 	client.Auth        = &Auth{client, TokenFromContext(ctx)}
 	client.Files       = &Files{client}
 	client.Folders     = &Folders{client}
