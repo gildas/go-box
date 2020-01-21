@@ -31,6 +31,9 @@ func (client *Client) sendRequest(ctx context.Context, options *request.Options,
 			if errors.As(err, &httperr) {
 				details.StatusCode = httperr.Code
 			}
+			if errors.Is(err, errors.HTTPBadRequestError) && errors.Is(details, InvalidGrantError) {
+				return nil, errors.UnauthorizedError.Wrap(details)
+			}
 			if errors.Is(err, errors.HTTPUnauthorizedError) {
 				return nil, errors.UnauthorizedError.Wrap(details)
 			}
