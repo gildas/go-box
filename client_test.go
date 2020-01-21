@@ -162,9 +162,9 @@ func (suite *ClientSuite) TestShouldFailUnmarshalingTokenWithInvalidJSON() {
 
 func (suite *ClientSuite) TestCanStoreTokenIntoContext() {
 	token := box.Token{
-		TokenType: "Bearer",
+		TokenType:   "Bearer",
 		AccessToken: "123456789deadbeef",
-		ExpiresOn: time.Now().UTC().Add(3915 * time.Millisecond),
+		ExpiresOn:   time.Now().UTC().Add(3915 * time.Millisecond),
 	}
 	ctx := token.ToContext(context.Background())
 	suite.Require().NotNil(ctx, "The context should not be nil")
@@ -176,9 +176,9 @@ func (suite *ClientSuite) TestCanStoreTokenIntoContext() {
 
 func (suite *ClientSuite) TestCanRetrieveTokenFromContext() {
 	token := box.Token{
-		TokenType: "Bearer",
+		TokenType:   "Bearer",
 		AccessToken: "123456789deadbeef",
-		ExpiresOn: time.Now().UTC().Add(3915 * time.Millisecond),
+		ExpiresOn:   time.Now().UTC().Add(3915 * time.Millisecond),
 	}
 	ctx := token.ToContext(context.Background())
 	suite.Require().NotNil(ctx, "The context should not be nil")
