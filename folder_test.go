@@ -132,8 +132,8 @@ func (suite *FolderSuite) TestCanDelete() {
 
 func (suite *FolderSuite) TestCanCreateSubFolder() {
 	sub, err := suite.Client.Folders.Create(context.Background(), &box.FolderEntry{
-		Name: "subfolder",
-		Parent: *suite.Root.AsPathEntry(),
+		Name:   "subfolder",
+		Parent: suite.Root.AsPathEntry(),
 	})
 	suite.Require().Nilf(err, "Failed creating a folder. Error: %s", err)
 	suite.Require().NotNil(sub, "Subfolder entry should not be nil")

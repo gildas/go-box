@@ -38,7 +38,7 @@ type FolderEntry struct {
 	SharedLink     *SharedLink    `json:"shared_link,omitempty"`
 	Checksum       string         `json:"sha1"`
 	FileVersion    FileVersion    `json:"file_version"`
-	Parent         PathEntry      `json:"parent"`
+	Parent         *PathEntry     `json:"parent"`
 	Paths          PathCollection `json:"path_collection"`
 	ItemCollection PathCollection `json:"item_collection"`
 	Tags           []string       `json:"tags"`
@@ -89,7 +89,7 @@ func (module *Folders) Create(ctx context.Context, entry *FolderEntry) (*FolderE
 	}
 
 	parentID := "0"
-	if len(entry.Parent.ID) > 0 {
+	if entry.Parent != nil && len(entry.Parent.ID) > 0 {
 		parentID = entry.Parent.ID
 	}
 
