@@ -3,6 +3,7 @@ package box
 import (
 	"context"
 	"encoding/json"
+	"net/url"
 
 	"github.com/gildas/go-errors"
 	"github.com/gildas/go-request"
@@ -10,11 +11,10 @@ import (
 
 // UploadOptions contains the options for uploading data
 type UploadOptions struct {
-	Parent      *PathEntry
-	Filename    string
-	ContentType string
-	Content     []byte
-	Payload     interface{}
+	Parent   *PathEntry
+	Filename string
+	Content  *request.Content
+	Payload  interface{}
 }
 
 // Upload uploads data to Box.com
@@ -26,27 +26,22 @@ func (module *Files) Upload(ctx context.Context, options *UploadOptions) (*FileC
 		return nil, errors.ArgumentMissingError.With("options").WithStack()
 	}
 
+	if len(options.Filename) == 0 {
+		return nil, errors.ArgumentMissingError.With("filename").WithStack()
+	}
 	if options.Payload != nil {
 		payload, err := json.Marshal(options.Payload)
 		if err != nil {
 			return nil, errors.JSONMarshalError.Wrap(err)
 		}
-		options.Content = payload
-		options.ContentType = "application/json"
+		options.Content = request.ContentWithData(payload, "application/json")
 	}
 
-	if len(options.Content) == 0 {
+	if options.Content == nil {
 		return nil, errors.ArgumentMissingError.With("content").WithStack()
-	}
-	if len(options.Filename) == 0 {
-		return nil, errors.ArgumentMissingError.With("filename").WithStack()
 	}
 	if !module.Client.IsAuthenticated() {
 		return nil, errors.UnauthorizedError.WithStack()
-	}
-
-	if len(options.ContentType) == 0 {
-		options.ContentType = "application/octet-stream"
 	}
 
 	parentID := "0"
@@ -54,7 +49,7 @@ func (module *Files) Upload(ctx context.Context, options *UploadOptions) (*FileC
 		parentID = options.Parent.ID
 	}
 
-	uploadURL, _ := module.api.Parse("content")
+	uploadURL, _ := url.Parse("https://upload.box.com/api/2.0/files/content")
 	results := FileCollection{}
 	if _, err := module.Client.sendRequest(ctx, &request.Options{
 		URL: uploadURL,
@@ -63,7 +58,7 @@ func (module *Files) Upload(ctx context.Context, options *UploadOptions) (*FileC
 			"parent_id": parentID,
 			">file":     options.Filename,
 		},
-		Attachment: request.ContentWithData(options.Content, options.ContentType).Reader(),
+		Attachment: options.Content.Reader(),
 	}, &results); err != nil {
 		return nil, err
 	}
