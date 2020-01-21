@@ -4,14 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
+
 	"github.com/gildas/go-core"
+	"github.com/gildas/go-errors"
+	"github.com/gildas/go-request"
 )
 
 // Files module
 type Files struct {
 	*Client
+	api *url.URL
 }
 
 // FileCollection represents a collection of FileEntry
@@ -89,20 +94,18 @@ type DownloadOptions struct {
 }
 
 // FindByID retrieves a file by its id
-func(module *Files) FindByID(ctx context.Context, fileID string) (*FileEntry, error) {
+func (module *Files) FindByID(ctx context.Context, fileID string) (*FileEntry, error) {
 	// query: fields=comma-separated list of fields to include in the response
 	if len(fileID) == 0 {
-		return nil, fmt.Errorf("Missing file ID")
+		return nil, errors.ArgumentMissingError.With("fileID").WithStack()
 	}
 	if !module.Client.IsAuthenticated() {
-		return nil, fmt.Errorf("Not Authenticated")
+		return nil, errors.UnauthorizedError.WithStack()
 	}
 
+	findURL, _ := module.api.Parse(fileID)
 	result := FileEntry{}
-	if _, err := module.Client.sendRequest(ctx, &requestOptions{
-		Method: "GET",
-		Path:   "https://api.box.com/2.0/files/" + fileID,
-	}, &result); err != nil {
+	if _, err := module.Client.sendRequest(ctx, &request.Options{URL: findURL}, &result); err != nil {
 		return nil, err
 	}
 	return &result, nil
@@ -139,7 +142,7 @@ func (module *Files) FindByName(ctx context.Context, name string, parent *PathEn
 // MarshalJSON marshals this into JSON
 func (file FileEntry) MarshalJSON() ([]byte, error) {
 	type surrogate FileEntry
-	return json.Marshal(struct {
+	data, err := json.Marshal(struct {
 		surrogate
 		CA  core.Time `json:"created_at,omitempty"`
 		MA  core.Time `json:"modified_at,omitempty"`
@@ -149,13 +152,14 @@ func (file FileEntry) MarshalJSON() ([]byte, error) {
 		CMA core.Time `json:"content_modified_at,omitempty"`
 	}{
 		surrogate: surrogate(file),
-		CA:  (core.Time)(file.CreatedAt),
-		MA:  (core.Time)(file.ModifiedAt),
-		TA:  (core.Time)(file.TrashedAt),
-		PA:  (core.Time)(file.PurgedAt),
-		CCA: (core.Time)(file.ContentCreatedAt),
-		CMA: (core.Time)(file.ContentModifiedAt),
+		CA:        (core.Time)(file.CreatedAt),
+		MA:        (core.Time)(file.ModifiedAt),
+		TA:        (core.Time)(file.TrashedAt),
+		PA:        (core.Time)(file.PurgedAt),
+		CCA:       (core.Time)(file.ContentCreatedAt),
+		CMA:       (core.Time)(file.ContentModifiedAt),
 	})
+	return data, errors.JSONMarshalError.Wrap(err)
 }
 
 // UnmarshalJSON decodes JSON
@@ -171,14 +175,14 @@ func (file *FileEntry) UnmarshalJSON(payload []byte) (err error) {
 		CMA core.Time `json:"content_modified_at,omitempty"`
 	}
 	if err = json.Unmarshal(payload, &inner); err != nil {
-		return err
+		return errors.JSONUnmarshalError.Wrap(err)
 	}
 	*file = FileEntry(inner.surrogate)
-	file.CreatedAt  = (time.Time)(inner.CA)
+	file.CreatedAt = (time.Time)(inner.CA)
 	file.ModifiedAt = (time.Time)(inner.MA)
-	file.TrashedAt  = (time.Time)(inner.TA)
-	file.PurgedAt   = (time.Time)(inner.PA)
-	file.ContentCreatedAt  = (time.Time)(inner.CCA)
+	file.TrashedAt = (time.Time)(inner.TA)
+	file.PurgedAt = (time.Time)(inner.PA)
+	file.ContentCreatedAt = (time.Time)(inner.CCA)
 	file.ContentModifiedAt = (time.Time)(inner.CMA)
 	return
 }

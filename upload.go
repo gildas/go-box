@@ -3,7 +3,9 @@ package box
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+
+	"github.com/gildas/go-errors"
+	"github.com/gildas/go-request"
 )
 
 // UploadOptions contains the options for uploading data
@@ -21,26 +23,26 @@ func (module *Files) Upload(ctx context.Context, options *UploadOptions) (*FileC
 
 	// TODO: Create real errors
 	if options == nil {
-		return nil, fmt.Errorf("Missing options")
+		return nil, errors.ArgumentMissingError.With("options").WithStack()
 	}
 
 	if options.Payload != nil {
 		payload, err := json.Marshal(options.Payload)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to encode payload into JSON, %s", err)
+			return nil, errors.JSONMarshalError.Wrap(err)
 		}
-		options.Content     = payload
+		options.Content = payload
 		options.ContentType = "application/json"
 	}
 
 	if len(options.Content) == 0 {
-		return nil, fmt.Errorf("Missing Content")
+		return nil, errors.ArgumentMissingError.With("content").WithStack()
 	}
 	if len(options.Filename) == 0 {
-		return nil, fmt.Errorf("Missing filename")
+		return nil, errors.ArgumentMissingError.With("filename").WithStack()
 	}
 	if !module.Client.IsAuthenticated() {
-		return nil, fmt.Errorf("Not Authenticated")
+		return nil, errors.UnauthorizedError.WithStack()
 	}
 
 	if len(options.ContentType) == 0 {
@@ -52,17 +54,16 @@ func (module *Files) Upload(ctx context.Context, options *UploadOptions) (*FileC
 		parentID = options.Parent.ID
 	}
 
+	uploadURL, _ := module.api.Parse("content")
 	results := FileCollection{}
-	if _, err := module.Client.sendRequest(ctx, &requestOptions{
-		Method:     "POST",
-		Path:       "https://upload.box.com/api/2.0/files/content", 
-		Parameters: map[string]string{
+	if _, err := module.Client.sendRequest(ctx, &request.Options{
+		URL: uploadURL,
+		Payload: map[string]string{
 			"name":      options.Filename,
 			"parent_id": parentID,
 			">file":     options.Filename,
 		},
-		Content:     options.Content,
-		ContentType: options.ContentType,
+		Attachment: request.ContentWithData(options.Content, options.ContentType).Reader(),
 	}, &results); err != nil {
 		return nil, err
 	}

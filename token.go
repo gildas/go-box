@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"time"
+	"github.com/gildas/go-errors"
 )
 
 // Token is the token used to send requests to Box.com
@@ -51,7 +52,7 @@ func (token *Token) UnmarshalJSON(payload []byte) (err error) {
 		ExpiresIn int64 `json:"expires_in"`
 	}
 	if err = json.Unmarshal(payload, &inner); err != nil {
-		return err
+		return errors.JSONUnmarshalError.Wrap(err)
 	}
 	*token = Token(inner.surrogate)
 	if token.TokenType == "bearer" {

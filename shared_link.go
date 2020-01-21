@@ -3,16 +3,19 @@ package box
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/url"
+	"net/http"
 	"time"
 
 	"github.com/gildas/go-core"
+	"github.com/gildas/go-errors"
+	"github.com/gildas/go-request"
 )
 
 // SharedLinks module
 type SharedLinks struct {
 	*Client
+	api *url.URL
 }
 
 // SharedLink represents a shared link
@@ -47,29 +50,34 @@ type SharedLinkOptions struct {
 func (module *SharedLinks) Create(ctx context.Context, entry *FileEntry, options *SharedLinkOptions) (*SharedLink, error) {
 	//log := module.Client.Logger.Scope("createsharedlink")
 	if entry == nil {
-		return nil, fmt.Errorf("Missing entry")
+		return nil, errors.ArgumentMissingError.With("entry").WithStack()
+	}
+	if len(entry.ID) == 0 {
+		return nil, errors.ArgumentMissingError.With("entry.ID").WithStack()
 	}
 	if options == nil {
 		options = &SharedLinkOptions{
 			Access:      "open",
-			Permissions: Permissions{ CanDownload: true },
+			Permissions: Permissions{CanDownload: true},
 		}
 	}
 
 	// TODO: Create real errors
 	if !module.Client.IsAuthenticated() {
-		return nil, fmt.Errorf("Not Authenticated")
+		return nil, errors.UnauthorizedError.WithStack()
 	}
 
 	// TODO: Validate Access (open, company, collaborators)
 
+	uploadURL, _ := module.api.Parse(entry.ID)
 	result := FileEntry{}
-	if _, err := module.Client.sendRequest(ctx, &requestOptions{
-		Method:  "PUT",
-		Path:    fmt.Sprintf("https://api.box.com/2.0/files/%s?fields=shared_link", entry.ID),
-		Payload: *options,
+	if _, err := module.Client.sendRequest(ctx, &request.Options{
+		Method:     http.MethodPut,
+		URL:        uploadURL,
+		Parameters: map[string]string{"fields": "shared_link"},
+		Payload:    options,
 	}, &result); err != nil {
-		return nil ,err
+		return nil, err
 	}
 	return result.SharedLink, nil
 }
@@ -81,7 +89,7 @@ func (slo SharedLinkOptions) MarshalJSON() ([]byte, error) {
 		surrogate
 		UA *core.Time `json:"unshared_at,omitempty"`
 	}
-	return json.Marshal(struct {
+	data, err := json.Marshal(struct {
 		SL sharedLink `json:"shared_link"`
 	}{
 		sharedLink{
@@ -89,12 +97,13 @@ func (slo SharedLinkOptions) MarshalJSON() ([]byte, error) {
 			(*core.Time)(slo.UnsharedAt),
 		},
 	})
+	return data, errors.JSONMarshalError.Wrap(err)
 }
 
 // MarshalJSON marshals this into JSON
 func (link SharedLink) MarshalJSON() ([]byte, error) {
 	type surrogate SharedLink
-	return json.Marshal(struct {
+	data, err := json.Marshal(struct {
 		surrogate
 		U  *core.URL  `json:"url"`
 		DU *core.URL  `json:"download_url"`
@@ -102,11 +111,12 @@ func (link SharedLink) MarshalJSON() ([]byte, error) {
 		UA *core.Time `json:"unshared_at"`
 	}{
 		surrogate: surrogate(link),
-		U:  (*core.URL)(link.URL),
-		DU: (*core.URL)(link.DownloadURL),
-		VU: (*core.URL)(link.VanityURL),
-		UA: (*core.Time)(link.UnsharedAt),
+		U:         (*core.URL)(link.URL),
+		DU:        (*core.URL)(link.DownloadURL),
+		VU:        (*core.URL)(link.VanityURL),
+		UA:        (*core.Time)(link.UnsharedAt),
 	})
+	return data, errors.JSONMarshalError.Wrap(err)
 }
 
 // UnmarshalJSON decodes JSON
@@ -120,12 +130,12 @@ func (link *SharedLink) UnmarshalJSON(payload []byte) (err error) {
 		UA *core.Time `json:"unshared_at"`
 	}
 	if err = json.Unmarshal(payload, &inner); err != nil {
-		return err
+		return errors.JSONUnmarshalError.Wrap(err)
 	}
 	*link = SharedLink(inner.surrogate)
-	link.URL         = (*url.URL)(inner.U)
+	link.URL = (*url.URL)(inner.U)
 	link.DownloadURL = (*url.URL)(inner.DU)
-	link.VanityURL   = (*url.URL)(inner.VU)
-	link.UnsharedAt  = (*time.Time)(inner.UA)
+	link.VanityURL = (*url.URL)(inner.VU)
+	link.UnsharedAt = (*time.Time)(inner.UA)
 	return
 }
