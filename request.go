@@ -7,20 +7,6 @@ import (
 	"github.com/gildas/go-request"
 )
 
-type requestOptions struct {
-	Method         string
-	Path           string
-	Headers        map[string]string
-	Parameters     map[string]string
-	Accept         string
-	ContentType    string
-	Payload        interface{}
-	Content        []byte
-	Authentication string
-	DeliveryTag    string
-	RequestID      string
-}
-
 // sendRequest sends an HTTP request to Box.com's API
 func (client *Client) sendRequest(ctx context.Context, options *request.Options, results interface{}) (*request.ContentReader, error) {
 	if options == nil {
