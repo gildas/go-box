@@ -3,7 +3,6 @@ package box
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -97,7 +96,7 @@ type DownloadOptions struct {
 func (module *Files) FindByID(ctx context.Context, fileID string) (*FileEntry, error) {
 	// query: fields=comma-separated list of fields to include in the response
 	if len(fileID) == 0 {
-		return nil, errors.ArgumentMissingError.With("fileID").WithStack()
+		return nil, errors.ArgumentMissingError.With("id").WithStack()
 	}
 	if !module.Client.IsAuthenticated() {
 		return nil, errors.UnauthorizedError.WithStack()
@@ -105,29 +104,27 @@ func (module *Files) FindByID(ctx context.Context, fileID string) (*FileEntry, e
 
 	findURL, _ := module.api.Parse(fileID)
 	result := FileEntry{}
-	if _, err := module.Client.sendRequest(ctx, &request.Options{URL: findURL}, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
+	_, err := module.Client.sendRequest(ctx, &request.Options{URL: findURL}, &result)
+	return &result, err
 }
 
 // FindByName retrieves a file by its name
 // For now, exact match and 1 level (no recursion)
 func (module *Files) FindByName(ctx context.Context, name string, parent *PathEntry) (*FileEntry, error) {
 	if len(name) == 0 {
-		return nil, fmt.Errorf("Missing file name")
+		return nil, errors.ArgumentMissingError.With("filename").WithStack()
 	}
 	if parent == nil || len(parent.ID) == 0 {
-		return nil, fmt.Errorf("Missing parent ID")
+		return nil, errors.ArgumentMissingError.With("parent").WithStack()
 	}
 	if !module.Client.IsAuthenticated() {
-		return nil, fmt.Errorf("Not Authenticated")
+		return nil, errors.UnauthorizedError.WithStack()
 	}
 
 	// First get the parent folder
 	folder, err := module.Client.Folders.FindByID(ctx, parent.ID)
 	if err != nil {
-		return nil, err
+		return nil, errors.ArgumentInvalidError.With("parent", parent.ID).Wrap(err)
 	}
 
 	name = strings.ToLower(name)
@@ -136,7 +133,7 @@ func (module *Files) FindByName(ctx context.Context, name string, parent *PathEn
 			return module.FindByID(ctx, item.ID)
 		}
 	}
-	return nil, NotFoundError
+	return nil, errors.NotFoundError.With("filename", name).WithStack()
 }
 
 // MarshalJSON marshals this into JSON
