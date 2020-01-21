@@ -17,6 +17,7 @@ import (
 // Auth module
 type Auth struct {
 	*Client
+	api   *url.URL
 	Token *Token
 }
 
@@ -78,10 +79,9 @@ func (module *Auth) Authenticate(ctx context.Context, creds Credentials) (err er
 		return errors.UnauthorizedError.Wrap(err)
 	}
 
-	authURL, _ := url.Parse("https://api.box.com/oauth2/token")
 	token := Token{}
 	_, err = module.Client.sendRequest(ctx, &request.Options{
-		URL:     authURL,
+		URL:     module.api,
 		Payload: map[string]string{
 			"grant_type":    "urn:ietf:params:oauth:grant-type:jwt-bearer",
 			"client_id":     creds.ClientID,

@@ -25,11 +25,11 @@ func NewClient(ctx context.Context) (*Client) {
 		log = logger.Create("Box")
 	}
 	client.Logger      = log.Child("box", "box")
-	client.Api         = &url.URL{Scheme: "https", Host: "api.box.com", Path: "/2.0"}
-	client.Auth        = &Auth{client, TokenFromContext(ctx)}
-	client.Files       = &Files{client, client.moduleApi("files")}
-	client.Folders     = &Folders{client, client.moduleApi("folders")}
-	client.SharedLinks = &SharedLinks{client, client.moduleApi("files")}
+	client.Api         = &url.URL{Scheme: "https", Host: "api.box.com", Path: "/2.0/"}
+	client.Auth        = &Auth{client, client.moduleApi("/oauth2/token/"), TokenFromContext(ctx)}
+	client.Files       = &Files{client, client.moduleApi("files/")}
+	client.Folders     = &Folders{client, client.moduleApi("folders/")}
+	client.SharedLinks = &SharedLinks{client, client.moduleApi("files/")}
 	return client
 }
 
