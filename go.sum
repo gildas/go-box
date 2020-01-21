@@ -16,8 +16,14 @@ github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZm
 github.com/gildas/go-core v0.0.0-20191124223829-4860e822c795/go.mod h1:+OB8rruJogwuwQ4k/OvL+aWRMCi/nP078q8/vvqGqdM=
 github.com/gildas/go-core v0.4.1 h1:6yjshmc5FQ9UZFunjHVVhPaIfewd+3jbFbhsYvrT0Ec=
 github.com/gildas/go-core v0.4.1/go.mod h1:+OB8rruJogwuwQ4k/OvL+aWRMCi/nP078q8/vvqGqdM=
+github.com/gildas/go-errors v0.0.2 h1:jtKgkMo30vItztEE6kkk15k2Gn1r/yGHxNditAGybP0=
+github.com/gildas/go-errors v0.0.2/go.mod h1:yBq+5XkcQRiWPXJlNF3ovGL8WuuegPfaFlt8XU35U7M=
 github.com/gildas/go-logger v1.3.0 h1:ONj9TebM2Vn3UgomQeYeNwGFGSrb8AnQB4U5d8Mg5q4=
 github.com/gildas/go-logger v1.3.0/go.mod h1:zY9HUm4OmhSTYze4zXehjo6FNt66potwJtmDSRw153A=
+github.com/gildas/go-logger v1.3.3 h1:1cIcSb3KoVrMOqmmts7HRYmUFWFywCmWZ5yJJ4r+P0E=
+github.com/gildas/go-logger v1.3.3/go.mod h1:FfCWXKjUkyfDvozeu8jQClaiJPCsDMcjaNeu7xPB/Es=
+github.com/gildas/go-request v0.2.3 h1:l0pe7HXwuCzeatLXNGdll7f7yvRpZR7Btl6Z1pIMtZs=
+github.com/gildas/go-request v0.2.3/go.mod h1:oqL6X+QmSMR72bMjo0fWsKBr1bBh2B/aIe6lcSvsgCA=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b h1:VKtxabqXZkF25pY9ekfRL6a582T4P37/31XEstQ5p58=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/mock v1.1.1/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=
@@ -49,6 +55,8 @@ github.com/hashicorp/golang-lru v0.5.1/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
+github.com/pkg/errors v0.8.2-0.20191109102316-7f95ac13edff h1:t8HrPGxv+T5aQouXpNfSM0PkTG4WQ0P3NTtfXzIJaio=
+github.com/pkg/errors v0.8.2-0.20191109102316-7f95ac13edff/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
