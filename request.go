@@ -10,7 +10,7 @@ import (
 // sendRequest sends an HTTP request to Box.com's API
 func (client *Client) sendRequest(ctx context.Context, options *request.Options, results interface{}) (*request.ContentReader, error) {
 	if options == nil {
-		options = &request.Options{}
+		return nil, errors.ArgumentMissingError.With("options").WithStack()
 	}
 	options.Context   = ctx
 	options.Logger    = client.Logger
@@ -48,8 +48,6 @@ func (client *Client) sendRequest(ctx context.Context, options *request.Options,
 		if errors.Is(err, errors.HTTPNotFoundError) {
 			return nil, errors.NotFoundError.Wrap(err)
 		}
-		return nil, err
 	}
-
 	return response, err
 }
