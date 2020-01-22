@@ -53,7 +53,7 @@ func (module *SharedLinks) Create(ctx context.Context, entry *FileEntry, options
 		return nil, errors.ArgumentMissingError.With("entry").WithStack()
 	}
 	if len(entry.ID) == 0 {
-		return nil, errors.ArgumentMissingError.With("entry.ID").WithStack()
+		return nil, errors.ArgumentMissingError.With("id").WithStack()
 	}
 	if options == nil {
 		options = &SharedLinkOptions{
@@ -62,7 +62,6 @@ func (module *SharedLinks) Create(ctx context.Context, entry *FileEntry, options
 		}
 	}
 
-	// TODO: Create real errors
 	if !module.Client.IsAuthenticated() {
 		return nil, errors.UnauthorizedError.WithStack()
 	}
