@@ -157,7 +157,7 @@ func (suite *FolderSuite) TestShouldFailCreatingWithMissingName() {
 	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
-	suite.Assert().Equal("Name", details.What)
+	suite.Assert().Equal("name", details.What)
 }
 
 func (suite *FolderSuite) TestShouldFailCreatingWhenNotAuthenticated() {

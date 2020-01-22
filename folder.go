@@ -82,7 +82,7 @@ func (folder *FolderEntry) AsPathEntry() *PathEntry {
 func (module *Folders) Create(ctx context.Context, entry *FolderEntry) (*FolderEntry, error) {
 	// query: fields=comma-separated list of fields to include in the response
 	if entry == nil || len(entry.Name) == 0 {
-		return nil, errors.ArgumentMissingError.With("Name").WithStack()
+		return nil, errors.ArgumentMissingError.With("name").WithStack()
 	}
 	if !module.Client.IsAuthenticated() {
 		return nil, errors.UnauthorizedError.WithStack()
