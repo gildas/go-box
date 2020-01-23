@@ -1,0 +1,261 @@
+package box
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/gildas/go-errors"
+	"github.com/gildas/go-logger"
+	"github.com/gildas/go-request"
+	"github.com/stretchr/testify/suite"
+)
+
+type RequestSuite struct {
+	suite.Suite
+	Name   string
+	Logger *logger.Logger
+	Start  time.Time
+
+	Server    *httptest.Server
+	ServerURL *url.URL
+}
+
+func TestRequestSuite(t *testing.T) {
+	suite.Run(t, new(RequestSuite))
+}
+
+func (suite *RequestSuite) SetupSuite() {
+	suite.Name = strings.TrimSuffix(reflect.TypeOf(*suite).Name(), "Suite")
+	folder := filepath.Join(".", "log")
+	if err := os.MkdirAll(folder, os.ModePerm); err != nil {
+		panic(err)
+	}
+	suite.Logger = logger.CreateWithStream("test", &logger.FileStream{Path: filepath.Join(folder, "test-"+strings.ToLower(suite.Name)+".log"), FilterLevel: logger.TRACE, Unbuffered: true})
+	suite.Server = suite.CreateServer()
+	suite.ServerURL, _ = url.Parse(suite.Server.URL)
+}
+
+func (suite *RequestSuite) BeforeTest(suiteName, testName string) {
+	suite.Logger.Infof("Test Start: %s %s", testName, strings.Repeat("-", 80-13-len(testName)))
+	suite.Start = time.Now()
+}
+
+func (suite *RequestSuite) AfterTest(suiteName, testName string) {
+	duration := time.Since(suite.Start)
+	suite.Logger.Record("duration", duration.String()).Infof("Test End: %s %s", testName, strings.Repeat("-", 80-11-len(testName)))
+}
+
+func (suite *RequestSuite) CreateServer() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		// Verify expected headers
+		suite.Assert().Equal("BOX Client "+VERSION, req.Header.Get("User-Agent"))
+		suite.Assert().NotEmpty(req.Header.Get("X-Request-Id"))
+
+		switch req.Method {
+		case http.MethodGet:
+			switch req.URL.Path {
+			case "/details/forbidden":
+				res.Header().Set("Content-Type", "application/json")
+				res.WriteHeader(http.StatusForbidden)
+				payload, _ := json.Marshal(ForbiddenError)
+				_, _ = res.Write(payload)
+			case "/details/emptygrant":
+				res.Header().Set("Content-Type", "application/json")
+				res.WriteHeader(http.StatusBadRequest)
+				payload, _ := json.Marshal(InvalidGrantError)
+				_, _ = res.Write(payload)
+			case "/details/notfound":
+				res.Header().Set("Content-Type", "application/json")
+				res.WriteHeader(http.StatusNotFound)
+				payload, _ := json.Marshal(FolderNotEmptyError)
+				_, _ = res.Write(payload)
+			case "/details/unauthorized":
+				res.Header().Set("Content-Type", "application/json")
+				res.WriteHeader(http.StatusUnauthorized)
+				payload, _ := json.Marshal(InvalidPrivateKeyError)
+				_, _ = res.Write(payload)
+			case "/unauthorized":
+				res.Header().Set("Content-Type", "text/plain")
+				res.WriteHeader(http.StatusUnauthorized)
+				_, _ = res.Write([]byte("unauthorized"))
+			case "/notfound":
+				res.Header().Set("Content-Type", "text/plain")
+				res.WriteHeader(http.StatusNotFound)
+				_, _ = res.Write([]byte("not found"))
+			default:
+				res.Header().Set("Content-Type", "text/plain")
+				res.WriteHeader(http.StatusNotFound)
+				_, _ = res.Write([]byte("not found"))
+			}
+		default:
+			res.Header().Set("Content-Type", "text/plain")
+			res.WriteHeader(http.StatusMethodNotAllowed)
+			_, _ = res.Write([]byte("not allowed"))
+		}
+	}))
+}
+
+func (suite *RequestSuite) TestShouldFailSendingWithoutOptions() {
+	client := NewClient(suite.Logger.ToContext(context.Background()))
+	suite.Require().NotNil(client)
+	_, err := client.sendRequest(context.Background(), nil, nil)
+	suite.Require().NotNil(err, "Should have failed sending request")
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	var details *errors.Error
+	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
+	suite.Assert().Equal("options", details.What)
+}
+
+func (suite *RequestSuite) TestShouldReceiveUnauthorizedError() {
+	reqURL, _ := suite.ServerURL.Parse("/unauthorized")
+	client := NewClient(suite.Logger.ToContext(context.Background()))
+	suite.Require().NotNil(client)
+	_, err := client.sendRequest(context.Background(), &request.Options{
+		URL:    reqURL,
+		Logger: suite.Logger,
+	}, nil)
+	suite.Require().NotNil(err, "Should have failed sending request")
+	suite.Logger.Errorf("Analyzing Error", err)
+	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	var details *RequestError
+	suite.Assert().False(errors.As(err, &details), "Error should not contain a RequestError")
+	if details != nil {
+		suite.Logger.Errorf("Analyzing Details", details)
+	}
+}
+
+func (suite *RequestSuite) TestShouldReceiveNotFoundError() {
+	reqURL, _ := suite.ServerURL.Parse("/notfound")
+	client := NewClient(suite.Logger.ToContext(context.Background()))
+	suite.Require().NotNil(client)
+	_, err := client.sendRequest(context.Background(), &request.Options{
+		URL:    reqURL,
+		Logger: suite.Logger,
+	}, nil)
+	suite.Require().NotNil(err, "Should have failed sending request")
+	suite.Logger.Errorf("Analyzing Error", err)
+	suite.Assert().Truef(errors.Is(err, errors.NotFoundError), "Errors should be a Not Found Error. Error: %v", err)
+	var details *RequestError
+	suite.Assert().False(errors.As(err, &details), "Error should not contain a RequestError")
+	if details != nil {
+		suite.Logger.Errorf("Analyzing Details", details)
+	}
+}
+
+func (suite *RequestSuite) TestShouldReceiveNotAllowed() {
+	reqURL, _ := suite.ServerURL.Parse("/this_is_not_the_page_you_are_looking_for")
+	client := NewClient(suite.Logger.ToContext(context.Background()))
+	suite.Require().NotNil(client)
+	_, err := client.sendRequest(context.Background(), &request.Options{
+		Method: http.MethodPost,
+		URL:    reqURL,
+		Logger: suite.Logger,
+	}, nil)
+	suite.Require().NotNil(err, "Should have failed sending request")
+	suite.Logger.Errorf("Analyzing Error", err)
+	suite.Assert().Truef(errors.Is(err, errors.HTTPMethodNotAllowedError), "Errors should be an HTTP Method Not Allowed Error. Error: %v", err)
+	var details *RequestError
+	suite.Assert().False(errors.As(err, &details), "Error should not contain a RequestError")
+	if details != nil {
+		suite.Logger.Errorf("Analyzing Details", details)
+	}
+}
+
+func (suite *RequestSuite) TestShouldReceiveError() {
+	reqURL, _ := suite.ServerURL.Parse("/this_is_not_the_page_you_are_looking_for")
+	client := NewClient(suite.Logger.ToContext(context.Background()))
+	suite.Require().NotNil(client)
+	_, err := client.sendRequest(context.Background(), &request.Options{
+		URL:    reqURL,
+		Logger: suite.Logger,
+	}, nil)
+	suite.Require().NotNil(err, "Should have failed sending request")
+	suite.Logger.Errorf("Analyzing Error", err)
+	suite.Assert().Truef(errors.Is(err, errors.HTTPNotFoundError), "Errors should be an HTTP Not Found Error. Error: %v", err)
+	var details *RequestError
+	suite.Assert().False(errors.As(err, &details), "Error should not contain a RequestError")
+	if details != nil {
+		suite.Logger.Errorf("Analyzing Details", details)
+	}
+}
+
+func (suite *RequestSuite) TestShouldReceiveUnauthorizedErrorWithDetails() {
+	reqURL, _ := suite.ServerURL.Parse("/details/unauthorized")
+	client := NewClient(suite.Logger.ToContext(context.Background()))
+	suite.Require().NotNil(client)
+	_, err := client.sendRequest(context.Background(), &request.Options{
+		URL:    reqURL,
+		Logger: suite.Logger,
+	}, nil)
+	suite.Require().NotNil(err, "Should have failed sending request")
+	suite.Logger.Errorf("Analyzing Error", err)
+	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	var details *RequestError
+	suite.Require().True(errors.As(err, &details), "Error should be a RequestError")
+}
+
+func (suite *RequestSuite) TestShouldReceiveUnauthorizedErrorWithEmptyGrant() {
+	reqURL, _ := suite.ServerURL.Parse("/details/emptygrant")
+	client := NewClient(suite.Logger.ToContext(context.Background()))
+	suite.Require().NotNil(client)
+	_, err := client.sendRequest(context.Background(), &request.Options{
+		URL:    reqURL,
+		Logger: suite.Logger,
+	}, nil)
+	suite.Require().NotNil(err, "Should have failed sending request")
+	suite.Logger.Errorf("Analyzing Error", err)
+	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, InvalidGrantError), "Errors should be an Invalid Grant Error. Error: %v", err)
+}
+
+func (suite *RequestSuite) TestShouldReceiveNotFoundErrorWithDetails() {
+	reqURL, _ := suite.ServerURL.Parse("/details/notfound")
+	client := NewClient(suite.Logger.ToContext(context.Background()))
+	suite.Require().NotNil(client)
+	_, err := client.sendRequest(context.Background(), &request.Options{
+		URL:    reqURL,
+		Logger: suite.Logger,
+	}, nil)
+	suite.Require().NotNil(err, "Should have failed sending request")
+	suite.Logger.Errorf("Analyzing Error", err)
+	suite.Assert().Truef(errors.Is(err, errors.NotFoundError), "Errors should be a Not Found Error. Error: %v", err)
+	var details *RequestError
+	suite.Require().True(errors.As(err, &details), "Error should be a RequestError")
+}
+
+func (suite *RequestSuite) TestShouldReceiveErrorWithDetails() {
+	reqURL, _ := suite.ServerURL.Parse("/details/forbidden")
+	client := NewClient(suite.Logger.ToContext(context.Background()))
+	suite.Require().NotNil(client)
+	_, err := client.sendRequest(context.Background(), &request.Options{
+		URL:    reqURL,
+		Logger: suite.Logger,
+	}, nil)
+	suite.Require().NotNil(err, "Should have failed sending request")
+	suite.Logger.Errorf("Analyzing Error", err)
+	var details *RequestError
+	suite.Require().True(errors.As(err, &details), "Error should be a RequestError")
+}
+
+func (suite *RequestSuite) TestCanMarshalRequestError() {
+	payload, err := json.Marshal(InvalidGrantError)
+	suite.Require().Nilf(err, "Error should be nil. Error: %v", err)
+	suite.Assert().NotEmpty(payload)
+}
+
+func (suite *RequestSuite) TestRequestErrorImplementsIs() {
+	var err error = InvalidGrantError
+	suite.Assert().True(errors.Is(err, InvalidGrantError))
+	suite.Assert().True(errors.Is(err, &InvalidGrantError))
+	suite.Assert().False(errors.Is(err, FolderNotEmptyError))
+	suite.Assert().False(errors.Is(err, errors.NotFoundError))
+}
