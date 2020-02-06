@@ -217,8 +217,8 @@ func (suite *ClientSuite) TestShouldFailAuthenticatingWithMissingPrivateKey() {
 	credentials.AppAuth.PrivateKey = ""
 	err := client.Auth.Authenticate(context.Background(), credentials)
 	suite.Require().NotNil(err, "Should have Failed to authenticate box.Client")
-	suite.Assert().True(errors.Is(err, errors.UnauthorizedError), "Error should be an Unauthorized Error")
-	suite.Assert().True(errors.Is(err, box.InvalidPrivateKeyError), "Error should be an Invalid Private Key Error")
+	suite.Assert().True(errors.Is(err, errors.Unauthorized), "Error should be an Unauthorized Error")
+	suite.Assert().True(errors.Is(err, box.InvalidPrivateKey), "Error should be an Invalid Private Key Error")
 	suite.Logger.Errorf("Expected error", err)
 }
 
@@ -230,8 +230,8 @@ func (suite *ClientSuite) TestShouldFailAuthenticatingWithInvalidPrivateKey() {
 	err := client.Auth.Authenticate(context.Background(), credentials)
 	suite.Require().NotNil(err, "Should have Failed to authenticate box.Client")
 	suite.Logger.Errorf("(Expected) Failed to Authenticate", err)
-	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Error should be an Unauthorized Error, Error: %s", err)
-	suite.Assert().Truef(errors.Is(err, box.InvalidPrivateKeyError), "Error should be an Invalid Private Key Error. Error: %s", err)
+	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Error should be an Unauthorized Error, Error: %s", err)
+	suite.Assert().Truef(errors.Is(err, box.InvalidPrivateKey), "Error should be an Invalid Private Key Error. Error: %s", err)
 	suite.Logger.Errorf("Expected error", err)
 }
 
@@ -242,7 +242,7 @@ func (suite *ClientSuite) TestShouldFailAuthenticatingWithInvalidClientID() {
 	credentials.ClientID = "Invalid ClientID"
 	err := client.Auth.Authenticate(context.Background(), credentials)
 	suite.Require().NotNil(err, "Should have Failed to authenticate box.Client")
-	suite.Assert().True(errors.Is(err, errors.UnauthorizedError), "Error should be an Unauthorized Error. Error: %s", err)
-	suite.Assert().True(errors.Is(err, box.InvalidGrantError), "Error should be an Invalid Grant Error. Error: %v", err)
+	suite.Assert().True(errors.Is(err, errors.Unauthorized), "Error should be an Unauthorized Error. Error: %s", err)
+	suite.Assert().True(errors.Is(err, box.InvalidGrant), "Error should be an Invalid Grant Error. Error: %v", err)
 	suite.Logger.Errorf("Expected error", err)
 }

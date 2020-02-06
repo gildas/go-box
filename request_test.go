@@ -66,22 +66,22 @@ func (suite *RequestSuite) CreateServer() *httptest.Server {
 			case "/details/forbidden":
 				res.Header().Set("Content-Type", "application/json")
 				res.WriteHeader(http.StatusForbidden)
-				payload, _ := json.Marshal(ForbiddenError)
+				payload, _ := json.Marshal(Forbidden)
 				_, _ = res.Write(payload)
 			case "/details/emptygrant":
 				res.Header().Set("Content-Type", "application/json")
 				res.WriteHeader(http.StatusBadRequest)
-				payload, _ := json.Marshal(InvalidGrantError)
+				payload, _ := json.Marshal(InvalidGrant)
 				_, _ = res.Write(payload)
 			case "/details/notfound":
 				res.Header().Set("Content-Type", "application/json")
 				res.WriteHeader(http.StatusNotFound)
-				payload, _ := json.Marshal(FolderNotEmptyError)
+				payload, _ := json.Marshal(FolderNotEmpty)
 				_, _ = res.Write(payload)
 			case "/details/unauthorized":
 				res.Header().Set("Content-Type", "application/json")
 				res.WriteHeader(http.StatusUnauthorized)
-				payload, _ := json.Marshal(InvalidPrivateKeyError)
+				payload, _ := json.Marshal(InvalidPrivateKey)
 				_, _ = res.Write(payload)
 			case "/unauthorized":
 				res.Header().Set("Content-Type", "text/plain")
@@ -109,7 +109,7 @@ func (suite *RequestSuite) TestShouldFailSendingWithoutOptions() {
 	suite.Require().NotNil(client)
 	_, err := client.sendRequest(context.Background(), nil, nil)
 	suite.Require().NotNil(err, "Should have failed sending request")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("options", details.What)
@@ -125,7 +125,7 @@ func (suite *RequestSuite) TestShouldReceiveUnauthorizedError() {
 	}, nil)
 	suite.Require().NotNil(err, "Should have failed sending request")
 	suite.Logger.Errorf("Analyzing Error", err)
-	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Errors should be an Unauthorized Error. Error: %v", err)
 	var details *RequestError
 	suite.Assert().False(errors.As(err, &details), "Error should not contain a RequestError")
 	if details != nil {
@@ -143,7 +143,7 @@ func (suite *RequestSuite) TestShouldReceiveNotFoundError() {
 	}, nil)
 	suite.Require().NotNil(err, "Should have failed sending request")
 	suite.Logger.Errorf("Analyzing Error", err)
-	suite.Assert().Truef(errors.Is(err, errors.NotFoundError), "Errors should be a Not Found Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.NotFound), "Errors should be a Not Found Error. Error: %v", err)
 	var details *RequestError
 	suite.Assert().False(errors.As(err, &details), "Error should not contain a RequestError")
 	if details != nil {
@@ -162,7 +162,7 @@ func (suite *RequestSuite) TestShouldReceiveNotAllowed() {
 	}, nil)
 	suite.Require().NotNil(err, "Should have failed sending request")
 	suite.Logger.Errorf("Analyzing Error", err)
-	suite.Assert().Truef(errors.Is(err, errors.HTTPMethodNotAllowedError), "Errors should be an HTTP Method Not Allowed Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.HTTPMethodNotAllowed), "Errors should be an HTTP Method Not Allowed Error. Error: %v", err)
 	var details *RequestError
 	suite.Assert().False(errors.As(err, &details), "Error should not contain a RequestError")
 	if details != nil {
@@ -180,7 +180,7 @@ func (suite *RequestSuite) TestShouldReceiveError() {
 	}, nil)
 	suite.Require().NotNil(err, "Should have failed sending request")
 	suite.Logger.Errorf("Analyzing Error", err)
-	suite.Assert().Truef(errors.Is(err, errors.HTTPNotFoundError), "Errors should be an HTTP Not Found Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.HTTPNotFound), "Errors should be an HTTP Not Found Error. Error: %v", err)
 	var details *RequestError
 	suite.Assert().False(errors.As(err, &details), "Error should not contain a RequestError")
 	if details != nil {
@@ -198,7 +198,7 @@ func (suite *RequestSuite) TestShouldReceiveUnauthorizedErrorWithDetails() {
 	}, nil)
 	suite.Require().NotNil(err, "Should have failed sending request")
 	suite.Logger.Errorf("Analyzing Error", err)
-	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Errors should be an Unauthorized Error. Error: %v", err)
 	var details *RequestError
 	suite.Require().True(errors.As(err, &details), "Error should be a RequestError")
 }
@@ -212,9 +212,9 @@ func (suite *RequestSuite) TestShouldReceiveUnauthorizedErrorWithEmptyGrant() {
 		Logger: suite.Logger,
 	}, nil)
 	suite.Require().NotNil(err, "Should have failed sending request")
-	suite.Logger.Errorf("Analyzing Error", err)
-	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
-	suite.Assert().Truef(errors.Is(err, InvalidGrantError), "Errors should be an Invalid Grant Error. Error: %v", err)
+	suite.Logger.Errorf("Analyzing ", err)
+	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Errors should be an Unauthorized Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, InvalidGrant), "Errors should be an Invalid Grant Error. Error: %v", err)
 }
 
 func (suite *RequestSuite) TestShouldReceiveNotFoundErrorWithDetails() {
@@ -227,7 +227,7 @@ func (suite *RequestSuite) TestShouldReceiveNotFoundErrorWithDetails() {
 	}, nil)
 	suite.Require().NotNil(err, "Should have failed sending request")
 	suite.Logger.Errorf("Analyzing Error", err)
-	suite.Assert().Truef(errors.Is(err, errors.NotFoundError), "Errors should be a Not Found Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.NotFound), "Errors should be a Not Found Error. Error: %v", err)
 	var details *RequestError
 	suite.Require().True(errors.As(err, &details), "Error should be a RequestError")
 }
@@ -247,15 +247,15 @@ func (suite *RequestSuite) TestShouldReceiveErrorWithDetails() {
 }
 
 func (suite *RequestSuite) TestCanMarshalRequestError() {
-	payload, err := json.Marshal(InvalidGrantError)
+	payload, err := json.Marshal(InvalidGrant)
 	suite.Require().Nilf(err, "Error should be nil. Error: %v", err)
 	suite.Assert().NotEmpty(payload)
 }
 
 func (suite *RequestSuite) TestRequestErrorImplementsIs() {
-	var err error = InvalidGrantError
-	suite.Assert().True(errors.Is(err, InvalidGrantError))
-	suite.Assert().True(errors.Is(err, &InvalidGrantError))
-	suite.Assert().False(errors.Is(err, FolderNotEmptyError))
-	suite.Assert().False(errors.Is(err, errors.NotFoundError))
+	var err error = InvalidGrant
+	suite.Assert().True(errors.Is(err, InvalidGrant))
+	suite.Assert().True(errors.Is(err, &InvalidGrant))
+	suite.Assert().False(errors.Is(err, FolderNotEmpty))
+	suite.Assert().False(errors.Is(err, errors.NotFound))
 }

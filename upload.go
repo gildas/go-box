@@ -23,11 +23,11 @@ func (module *Files) Upload(ctx context.Context, options *UploadOptions) (*FileC
 
 	// TODO: Create real errors
 	if options == nil {
-		return nil, errors.ArgumentMissingError.With("options").WithStack()
+		return nil, errors.ArgumentMissing.With("options").WithStack()
 	}
 
 	if len(options.Filename) == 0 {
-		return nil, errors.ArgumentMissingError.With("filename").WithStack()
+		return nil, errors.ArgumentMissing.With("filename").WithStack()
 	}
 	if options.Payload != nil {
 		payload, err := json.Marshal(options.Payload)
@@ -38,10 +38,10 @@ func (module *Files) Upload(ctx context.Context, options *UploadOptions) (*FileC
 	}
 
 	if options.Content == nil {
-		return nil, errors.ArgumentMissingError.With("content").WithStack()
+		return nil, errors.ArgumentMissing.With("content").WithStack()
 	}
 	if !module.Client.IsAuthenticated() {
-		return nil, errors.UnauthorizedError.WithStack()
+		return nil, errors.Unauthorized.WithStack()
 	}
 
 	parentID := "0"

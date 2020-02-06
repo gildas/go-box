@@ -185,7 +185,7 @@ func (suite *SharedLinkSuite) TestCanCreateWithOptions() {
 func (suite *SharedLinkSuite) TestShouldFailCreatingWithMissingEntry() {
 	_, err := suite.Client.SharedLinks.Create(context.Background(), nil, nil)
 	suite.Require().NotNil(err, "Should have failed sharing link")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("entry", details.What)
@@ -195,7 +195,7 @@ func (suite *SharedLinkSuite) TestShouldFailCreatingWithInvalidEntry() {
 	entry := &box.FileEntry{}
 	_, err := suite.Client.SharedLinks.Create(context.Background(), entry, nil)
 	suite.Require().NotNil(err, "Should have failed sharing link")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("id", details.What)
@@ -209,5 +209,5 @@ func (suite *SharedLinkSuite) TestShouldFailCreatingWhenNotAuthenticated() {
 	entry := &box.FileEntry{ID: "1234"}
 	_, err := suite.Client.SharedLinks.Create(context.Background(), entry, nil)
 	suite.Require().NotNil(err, "Should have failed sharing link")
-	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Errors should be an Unauthorized Error. Error: %v", err)
 }

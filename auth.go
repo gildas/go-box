@@ -67,16 +67,16 @@ func (module *Auth) Authenticate(ctx context.Context, creds Credentials) (err er
 
 	pemBlock, _ := pem.Decode([]byte(creds.AppAuth.PrivateKey))
 	if pemBlock == nil || len(pemBlock.Bytes) == 0 {
-		return errors.UnauthorizedError.Wrap(InvalidPrivateKeyError)
+		return errors.Unauthorized.Wrap(InvalidPrivateKey)
 	}
 	rsaKey, err := pkcs8.ParsePKCS8PrivateKeyRSA(pemBlock.Bytes, []byte(creds.AppAuth.Passphrase))
 	if err != nil {
-		return errors.UnauthorizedError.Wrap(errors.WithMessage(InvalidPrivateKeyError, err.Error()))
+		return errors.Unauthorized.Wrap(errors.WithMessage(InvalidPrivateKey, err.Error()))
 	}
 
 	signedToken, err := jwtToken.SignedString(rsaKey)
 	if err != nil {
-		return errors.UnauthorizedError.Wrap(err)
+		return errors.Unauthorized.Wrap(err)
 	}
 
 	token := Token{}

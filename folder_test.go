@@ -154,7 +154,7 @@ func (suite *FolderSuite) TestCanFindByName() {
 func (suite *FolderSuite) TestShouldFailCreatingWithMissingName() {
 	_, err := suite.Client.Folders.Create(context.Background(), &box.FolderEntry{})
 	suite.Require().NotNil(err, "Should have failed creating folder")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("name", details.What)
@@ -168,7 +168,7 @@ func (suite *FolderSuite) TestShouldFailCreatingWhenNotAuthenticated() {
 		Name: "unit-test",
 	})
 	suite.Require().NotNil(err, "Should have failed creating folder")
-	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Errors should be an Unauthorized Error. Error: %v", err)
 }
 
 func (suite *FolderSuite) TestShouldFailCreatingWithSameName() {
@@ -176,7 +176,7 @@ func (suite *FolderSuite) TestShouldFailCreatingWithSameName() {
 		Name: "unit-test",
 	})
 	suite.Require().NotNil(err, "Should have failed creating folder")
-	suite.Assert().Truef(errors.Is(err, box.ItemNameInUseError), "Errors should be an Item Name In Use Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, box.ItemNameInUse), "Errors should be an Item Name In Use Error. Error: %v", err)
 }
 
 func (suite *FolderSuite) TestShouldFailDeletingWithInvalidID() {
@@ -184,7 +184,7 @@ func (suite *FolderSuite) TestShouldFailDeletingWithInvalidID() {
 	folder.ID = "1234"
 	err := suite.Client.Folders.Delete(context.Background(), &folder)
 	suite.Require().NotNil(err, "Should have failed deleting folder with invalid ID")
-	suite.Assert().Truef(errors.Is(err, errors.NotFoundError), "Errors should be a Not Found Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.NotFound), "Errors should be a Not Found Error. Error: %v", err)
 }
 
 func (suite *FolderSuite) TestShouldFailDeletingWithMissingID() {
@@ -192,7 +192,7 @@ func (suite *FolderSuite) TestShouldFailDeletingWithMissingID() {
 	folder.ID = ""
 	err := suite.Client.Folders.Delete(context.Background(), &folder)
 	suite.Require().NotNil(err, "Should have failed deleting folder without ID")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("ID", details.What)
@@ -204,19 +204,19 @@ func (suite *FolderSuite) TestShouldFailDeletingWhenNotAuthenticated() {
 	}
 	err := suite.Client.Folders.Delete(context.Background(), suite.Root)
 	suite.Require().NotNil(err, "Should have failed deleting folder when unauthenticated")
-	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Errors should be an Unauthorized Error. Error: %v", err)
 }
 
 func (suite *FolderSuite) TestShouldFailFindingWithInvalidID() {
 	_, err := suite.Client.Folders.FindByID(context.Background(), "1234")
 	suite.Require().NotNil(err, "Should have failed finding folder with invalid ID")
-	suite.Assert().Truef(errors.Is(err, errors.NotFoundError), "Errors should be a Not Found Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.NotFound), "Errors should be a Not Found Error. Error: %v", err)
 }
 
 func (suite *FolderSuite) TestShouldFailFindingWithInvalidName() {
 	_, err := suite.Client.Folders.FindByName(context.Background(), "this_is_not_the_folder_you_are_looking_for")
 	suite.Require().NotNil(err, "Should have failed finding folder with invalid name")
-	suite.Assert().Truef(errors.Is(err, errors.NotFoundError), "Errors should be a Not Found Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.NotFound), "Errors should be a Not Found Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("folder", details.What)
@@ -226,7 +226,7 @@ func (suite *FolderSuite) TestShouldFailFindingWithInvalidName() {
 func (suite *FolderSuite) TestShouldFailFindingWithMissingID() {
 	_, err := suite.Client.Folders.FindByID(context.Background(), "")
 	suite.Require().NotNil(err, "Should have failed finding folder without ID")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("ID", details.What)
@@ -235,7 +235,7 @@ func (suite *FolderSuite) TestShouldFailFindingWithMissingID() {
 func (suite *FolderSuite) TestShouldFailFindingWithMissingName() {
 	_, err := suite.Client.Folders.FindByName(context.Background(), "")
 	suite.Require().NotNil(err, "Should have failed finding folder without name")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("name", details.What)
@@ -247,11 +247,11 @@ func (suite *FolderSuite) TestShouldFailFindingWhenNotAuthenticated() {
 	}
 	_, err := suite.Client.Folders.FindByID(context.Background(), suite.Root.ID)
 	suite.Require().NotNil(err, "Should have failed deleting folder when unauthenticated")
-	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Errors should be an Unauthorized Error. Error: %v", err)
 
 	_, err = suite.Client.Folders.FindByName(context.Background(), suite.Root.Name)
 	suite.Require().NotNil(err, "Should have failed deleting folder when unauthenticated")
-	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Errors should be an Unauthorized Error. Error: %v", err)
 }
 
 func (suite *FolderSuite) TestShouldFailUnmarshalingFolderWithInvalidJSON() {

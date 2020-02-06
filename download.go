@@ -11,10 +11,10 @@ import (
 func (module *Files) Download(ctx context.Context, entry *FileEntry) (*request.ContentReader, error) {
 	// query: version=string to get a specific version
 	if entry == nil || len(entry.ID) == 0 {
-		return nil, errors.ArgumentMissingError.With("entry").WithStack()
+		return nil, errors.ArgumentMissing.With("entry").WithStack()
 	}
 	if !module.Client.IsAuthenticated() {
-		return nil, errors.UnauthorizedError.WithStack()
+		return nil, errors.Unauthorized.WithStack()
 	}
 
 	downloadURL, _ := module.api.Parse(entry.ID + "/content")
