@@ -205,7 +205,7 @@ func (suite *FileSuite) TestCanMarshalFileEntry() {
 func (suite *FileSuite) TestShouldFailDownloadingWithMissingEntry() {
 	_, err := suite.Client.Files.Download(context.Background(), nil)
 	suite.Require().NotNil(err, "Should have failed downloading file")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("entry", details.What)
@@ -217,13 +217,13 @@ func (suite *FileSuite) TestShouldFailDownloadingWhenNotAuthenticated() {
 	}
 	_, err := suite.Client.Files.Download(context.Background(), &box.FileEntry{ID: "1234"})
 	suite.Require().NotNil(err, "Should have failed dowloading file")
-	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Errors should be an Unauthorized Error. Error: %v", err)
 }
 
 func (suite *FileSuite) TestShouldFailFindingWithMissingParent() {
 	_, err := suite.Client.Files.FindByName(context.Background(), "hello.txt", nil)
 	suite.Require().NotNil(err, "Should have failed finding FileEntry")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("parent", details.What)
@@ -232,7 +232,7 @@ func (suite *FileSuite) TestShouldFailFindingWithMissingParent() {
 func (suite *FileSuite) TestShouldFailFindingWithMissingID() {
 	_, err := suite.Client.Files.FindByID(context.Background(), "")
 	suite.Require().NotNil(err, "Should have failed finding FileEntry")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("id", details.What)
@@ -241,7 +241,7 @@ func (suite *FileSuite) TestShouldFailFindingWithMissingID() {
 func (suite *FileSuite) TestShouldFailFindingWithMissingFilename() {
 	_, err := suite.Client.Files.FindByName(context.Background(), "", suite.Root.AsPathEntry())
 	suite.Require().NotNil(err, "Should have failed finding FileEntry")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("filename", details.What)
@@ -251,7 +251,7 @@ func (suite *FileSuite) TestShouldFailFindingWithInvalidParent() {
 	folder := &box.FolderEntry{Type: "folder", ID: "1234", Name:"bogus_folder"}
 	_, err := suite.Client.Files.FindByName(context.Background(), "hello.txt", folder.AsPathEntry())
 	suite.Require().NotNil(err, "Should have failed finding FileEntry")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentInvalidError), "Errors should be an Argument Invalid Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentInvalid), "Errors should be an Argument Invalid Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("parent", details.What)
@@ -261,7 +261,7 @@ func (suite *FileSuite) TestShouldFailFindingWithInvalidParent() {
 func (suite *FileSuite) TestShouldFailFindingWithUnknownFilename() {
 	_, err := suite.Client.Files.FindByName(context.Background(), "this_is_not_the_file_you_are_looking_for.txt", suite.Root.AsPathEntry())
 	suite.Require().NotNil(err, "Should have failed finding FileEntry")
-	suite.Assert().Truef(errors.Is(err, errors.NotFoundError), "Errors should be a Not Found Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.NotFound), "Errors should be a Not Found Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("filename", details.What)
@@ -274,11 +274,11 @@ func (suite *FileSuite) TestShouldFailFindingWhenNotAuthenticated() {
 	}
 	_, err := suite.Client.Files.FindByID(context.Background(), "12345")
 	suite.Require().NotNil(err, "Should have failed finding FileEntry")
-	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Errors should be an Unauthorized Error. Error: %v", err)
 
 	_, err = suite.Client.Files.FindByName(context.Background(), "hello.txt", suite.Root.AsPathEntry())
 	suite.Require().NotNil(err, "Should have failed finding FileEntry")
-	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Errors should be an Unauthorized Error. Error: %v", err)
 }
 
 func (suite *FileSuite) TestShouldFailUnmarshalingFileEntryWithInvalidJSON() {
@@ -291,7 +291,7 @@ func (suite *FileSuite) TestShouldFailUnmarshalingFileEntryWithInvalidJSON() {
 func (suite *FileSuite) TestShouldFailUploadingWithoutOptions() {
 	_, err := suite.Client.Files.Upload(context.Background(), nil)
 	suite.Require().NotNil(err, "Should have failed uploading file")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("options", details.What)
@@ -300,7 +300,7 @@ func (suite *FileSuite) TestShouldFailUploadingWithoutOptions() {
 func (suite *FileSuite) TestShouldFailUploadingWithoutFilename() {
 	_, err := suite.Client.Files.Upload(context.Background(), &box.UploadOptions{})
 	suite.Require().NotNil(err, "Should have failed uploading file")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("filename", details.What)
@@ -312,7 +312,7 @@ func (suite *FileSuite) TestShouldFailUploadingWithoutContent() {
 		Filename: "hello.txt",
 	})
 	suite.Require().NotNil(err, "Should have failed uploading file")
-	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissingError), "Errors should be an Argument Missing Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
 	suite.Require().True(errors.As(err, &details), "Error should be an errors.Error")
 	suite.Assert().Equal("content", details.What)
@@ -336,7 +336,7 @@ func (suite *FileSuite) TestShouldFailUploadingWithInvalidParent() {
 		Content:  request.ContentWithData([]byte("Hello, World!"), "text/plain"),
 	})
 	suite.Require().NotNil(err, "Should have failed uploading file")
-	suite.Assert().Truef(errors.Is(err, errors.NotFoundError), "Errors should be a Not Found Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.NotFound), "Errors should be a Not Found Error. Error: %v", err)
 }
 
 func (suite *FileSuite) TestShouldFailUploadingWhenNotAuthenticated() {
@@ -349,5 +349,5 @@ func (suite *FileSuite) TestShouldFailUploadingWhenNotAuthenticated() {
 		Content:  request.ContentWithData([]byte("Hello, World!"), "text/plain"),
 	})
 	suite.Require().NotNil(err, "Should have failed uploading file")
-	suite.Assert().Truef(errors.Is(err, errors.UnauthorizedError), "Errors should be an Unauthorized Error. Error: %v", err)
+	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Errors should be an Unauthorized Error. Error: %v", err)
 }

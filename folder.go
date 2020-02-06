@@ -82,10 +82,10 @@ func (folder *FolderEntry) AsPathEntry() *PathEntry {
 func (module *Folders) Create(ctx context.Context, entry *FolderEntry) (*FolderEntry, error) {
 	// query: fields=comma-separated list of fields to include in the response
 	if entry == nil || len(entry.Name) == 0 {
-		return nil, errors.ArgumentMissingError.With("name").WithStack()
+		return nil, errors.ArgumentMissing.With("name").WithStack()
 	}
 	if !module.Client.IsAuthenticated() {
-		return nil, errors.UnauthorizedError.WithStack()
+		return nil, errors.Unauthorized.WithStack()
 	}
 
 	parentID := "0"
@@ -107,10 +107,10 @@ func (module *Folders) Create(ctx context.Context, entry *FolderEntry) (*FolderE
 // Delete deletes a folder recursively
 func (module *Folders) Delete(ctx context.Context, entry *FolderEntry) error {
 	if entry == nil || len(entry.ID) == 0 {
-		return errors.ArgumentMissingError.With("ID").WithStack()
+		return errors.ArgumentMissing.With("ID").WithStack()
 	}
 	if !module.Client.IsAuthenticated() {
-		return errors.UnauthorizedError.WithStack()
+		return errors.Unauthorized.WithStack()
 	}
 	deleteURL, _ := module.api.Parse(entry.ID)
 	_, err := module.Client.sendRequest(ctx, &request.Options{
@@ -125,10 +125,10 @@ func (module *Folders) Delete(ctx context.Context, entry *FolderEntry) error {
 func (module *Folders) FindByID(ctx context.Context, folderID string) (*FolderEntry, error) {
 	// query: fields=comma-separated list of fields to include in the response
 	if len(folderID) == 0 {
-		return nil, errors.ArgumentMissingError.With("ID").WithStack()
+		return nil, errors.ArgumentMissing.With("ID").WithStack()
 	}
 	if !module.Client.IsAuthenticated() {
-		return nil, errors.UnauthorizedError.WithStack()
+		return nil, errors.Unauthorized.WithStack()
 	}
 
 	findURL, _ := module.api.Parse(folderID)
@@ -143,10 +143,10 @@ func (module *Folders) FindByID(ctx context.Context, folderID string) (*FolderEn
 // For now, exact match and 1 level (no recursion)
 func (module *Folders) FindByName(ctx context.Context, name string) (*FolderEntry, error) {
 	if len(name) == 0 {
-		return nil, errors.ArgumentMissingError.With("name").WithStack()
+		return nil, errors.ArgumentMissing.With("name").WithStack()
 	}
 	if !module.Client.IsAuthenticated() {
-		return nil, errors.UnauthorizedError.WithStack()
+		return nil, errors.Unauthorized.WithStack()
 	}
 
 	// First get the root folder
@@ -164,7 +164,7 @@ func (module *Folders) FindByName(ctx context.Context, name string) (*FolderEntr
 			return module.FindByID(ctx, item.ID)
 		}
 	}
-	return nil, errors.NotFoundError.With("folder", name).WithStack()
+	return nil, errors.NotFound.With("folder", name).WithStack()
 }
 
 // MarshalJSON marshals this into JSON
