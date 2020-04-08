@@ -2,8 +2,8 @@ package box
 
 import (
 	"context"
-	"encoding/pem"
 	"encoding/json"
+	"encoding/pem"
 	"net/url"
 	"time"
 
@@ -55,9 +55,9 @@ func (module *Auth) Authenticate(ctx context.Context, creds Credentials) (err er
 
 	jwtToken := jwt.NewWithClaims(jwt.GetSigningMethod("RS256"), boxClaims{
 		"enterprise",
-		jwt.StandardClaims {
-			Audience: "https://api.box.com/oauth2/token",
-			ExpiresAt: time.Now().Add(30*time.Second).Unix(),
+		jwt.StandardClaims{
+			Audience:  "https://api.box.com/oauth2/token",
+			ExpiresAt: time.Now().Add(30 * time.Second).Unix(),
 			Id:        uuid.Must(uuid.NewRandom()).String(),
 			Issuer:    creds.ClientID,
 			Subject:   creds.EnterpriseID,
@@ -81,7 +81,7 @@ func (module *Auth) Authenticate(ctx context.Context, creds Credentials) (err er
 
 	token := Token{}
 	_, err = module.Client.sendRequest(ctx, &request.Options{
-		URL:     module.api,
+		URL: module.api,
 		Payload: map[string]string{
 			"grant_type":    "urn:ietf:params:oauth:grant-type:jwt-bearer",
 			"client_id":     creds.ClientID,

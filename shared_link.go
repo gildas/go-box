@@ -3,8 +3,8 @@ package box
 import (
 	"context"
 	"encoding/json"
-	"net/url"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/gildas/go-core"

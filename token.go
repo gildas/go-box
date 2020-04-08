@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"time"
+
 	"github.com/gildas/go-errors"
 )
 
@@ -31,7 +32,7 @@ func (token *Token) ToContext(parent context.Context) context.Context {
 
 // TokenFromContext retrieves a token from the given context
 // If no token was stored in the context, nil is returned
-func TokenFromContext(ctx context.Context) (*Token) {
+func TokenFromContext(ctx context.Context) *Token {
 	value := ctx.Value(TokenContextKey)
 	if value == nil {
 		return nil
