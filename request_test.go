@@ -3,11 +3,10 @@ package box
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -31,27 +30,6 @@ type RequestSuite struct {
 
 func TestRequestSuite(t *testing.T) {
 	suite.Run(t, new(RequestSuite))
-}
-
-func (suite *RequestSuite) SetupSuite() {
-	suite.Name = strings.TrimSuffix(reflect.TypeOf(*suite).Name(), "Suite")
-	folder := filepath.Join(".", "log")
-	if err := os.MkdirAll(folder, os.ModePerm); err != nil {
-		panic(err)
-	}
-	suite.Logger = logger.CreateWithStream("test", &logger.FileStream{Path: filepath.Join(folder, "test-"+strings.ToLower(suite.Name)+".log"), FilterLevel: logger.TRACE, Unbuffered: true})
-	suite.Server = suite.CreateServer()
-	suite.ServerURL, _ = url.Parse(suite.Server.URL)
-}
-
-func (suite *RequestSuite) BeforeTest(suiteName, testName string) {
-	suite.Logger.Infof("Test Start: %s %s", testName, strings.Repeat("-", 80-13-len(testName)))
-	suite.Start = time.Now()
-}
-
-func (suite *RequestSuite) AfterTest(suiteName, testName string) {
-	duration := time.Since(suite.Start)
-	suite.Logger.Record("duration", duration.String()).Infof("Test End: %s %s", testName, strings.Repeat("-", 80-11-len(testName)))
 }
 
 func (suite *RequestSuite) CreateServer() *httptest.Server {
@@ -258,4 +236,41 @@ func (suite *RequestSuite) TestRequestErrorImplementsIs() {
 	suite.Assert().True(errors.Is(err, &InvalidGrant))
 	suite.Assert().False(errors.Is(err, FolderNotEmpty))
 	suite.Assert().False(errors.Is(err, errors.NotFound))
+}
+
+// Suite Tools
+
+func (suite *RequestSuite) SetupSuite() {
+	suite.Name = strings.TrimSuffix(reflect.TypeOf(*suite).Name(), "Suite")
+	suite.Logger = logger.Create("test",
+		&logger.FileStream{
+			Path:        fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
+			Unbuffered:  true,
+			FilterLevel: logger.TRACE,
+		},
+	).Child("test", "test")
+	suite.Logger.Infof("Suite Start: %s %s", suite.Name, strings.Repeat("=", 80-14-len(suite.Name)))
+	suite.Server = suite.CreateServer()
+	suite.ServerURL, _ = url.Parse(suite.Server.URL)
+}
+
+func (suite *RequestSuite) TearDownSuite() {
+	if suite.T().Failed() {
+		suite.Logger.Warnf("At least one test failed, we are not cleaning")
+		suite.T().Log("At least one test failed, we are not cleaning")
+	} else {
+		suite.Logger.Infof("All tests succeeded, we are cleaning")
+	}
+	suite.Logger.Infof("Suite End: %s %s", suite.Name, strings.Repeat("=", 80-12-len(suite.Name)))
+	suite.Logger.Close()
+}
+
+func (suite *RequestSuite) BeforeTest(suiteName, testName string) {
+	suite.Logger.Infof("Test Start: %s %s", testName, strings.Repeat("-", 80-13-len(testName)))
+	suite.Start = time.Now()
+}
+
+func (suite *RequestSuite) AfterTest(suiteName, testName string) {
+	duration := time.Since(suite.Start)
+	suite.Logger.Record("duration", duration.String()).Infof("Test End: %s %s", testName, strings.Repeat("-", 80-11-len(testName)))
 }
