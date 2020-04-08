@@ -3,8 +3,8 @@ package box
 import (
 	"context"
 	"encoding/json"
-	"net/url"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -95,7 +95,7 @@ func (module *Folders) Create(ctx context.Context, entry *FolderEntry) (*FolderE
 
 	result := FolderEntry{}
 	_, err := module.Client.sendRequest(ctx, &request.Options{
-		URL:     module.api,
+		URL: module.api,
 		Payload: struct {
 			Name   string    `json:"name"`
 			Parent PathEntry `json:"parent"`

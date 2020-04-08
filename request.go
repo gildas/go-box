@@ -12,8 +12,8 @@ func (client *Client) sendRequest(ctx context.Context, options *request.Options,
 	if options == nil {
 		return nil, errors.ArgumentMissing.With("options").WithStack()
 	}
-	options.Context   = ctx
-	options.Logger    = client.Logger
+	options.Context = ctx
+	options.Logger = client.Logger
 	options.UserAgent = "BOX Client " + VERSION
 	if client.IsAuthenticated() {
 		options.Authorization = request.BearerAuthorization(client.Auth.Token.AccessToken)

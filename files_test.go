@@ -248,7 +248,7 @@ func (suite *FileSuite) TestShouldFailFindingWithMissingFilename() {
 }
 
 func (suite *FileSuite) TestShouldFailFindingWithInvalidParent() {
-	folder := &box.FolderEntry{Type: "folder", ID: "1234", Name:"bogus_folder"}
+	folder := &box.FolderEntry{Type: "folder", ID: "1234", Name: "bogus_folder"}
 	_, err := suite.Client.Files.FindByName(context.Background(), "hello.txt", folder.AsPathEntry())
 	suite.Require().NotNil(err, "Should have failed finding FileEntry")
 	suite.Assert().Truef(errors.Is(err, errors.ArgumentInvalid), "Errors should be an Argument Invalid Error. Error: %v", err)
@@ -329,7 +329,7 @@ func (suite *FileSuite) TestShouldFailUploadingWithBogusPayload() {
 }
 
 func (suite *FileSuite) TestShouldFailUploadingWithInvalidParent() {
-	folder := &box.FolderEntry{Type: "folder", ID: "1234", Name:"bogus_folder"}
+	folder := &box.FolderEntry{Type: "folder", ID: "1234", Name: "bogus_folder"}
 	_, err := suite.Client.Files.Upload(context.Background(), &box.UploadOptions{
 		Parent:   folder.AsPathEntry(),
 		Filename: "hello.txt",

@@ -1,8 +1,9 @@
 package box
 
 import (
-	"net/url"
 	"context"
+	"net/url"
+
 	"github.com/gildas/go-logger"
 )
 
@@ -18,17 +19,17 @@ type Client struct {
 }
 
 // NewClient instantiates a new Client
-func NewClient(ctx context.Context) (*Client) {
+func NewClient(ctx context.Context) *Client {
 	client := &Client{}
 	log, err := logger.FromContext(ctx)
 	if err != nil {
 		log = logger.Create("Box")
 	}
-	client.Logger      = log.Child("box", "box")
-	client.Api         = &url.URL{Scheme: "https", Host: "api.box.com", Path: "/2.0/"}
-	client.Auth        = &Auth{client, client.moduleApi("/oauth2/token/"), TokenFromContext(ctx)}
-	client.Files       = &Files{client, client.moduleApi("files/")}
-	client.Folders     = &Folders{client, client.moduleApi("folders/")}
+	client.Logger = log.Child("box", "box")
+	client.Api = &url.URL{Scheme: "https", Host: "api.box.com", Path: "/2.0/"}
+	client.Auth = &Auth{client, client.moduleApi("/oauth2/token/"), TokenFromContext(ctx)}
+	client.Files = &Files{client, client.moduleApi("files/")}
+	client.Folders = &Folders{client, client.moduleApi("folders/")}
 	client.SharedLinks = &SharedLinks{client, client.moduleApi("files/")}
 	return client
 }
