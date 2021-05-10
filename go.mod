@@ -3,18 +3,13 @@ module github.com/gildas/go-box
 go 1.13
 
 require (
-	cloud.google.com/go v0.56.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/gildas/go-core v0.4.3
+	github.com/gildas/go-core v0.4.9
 	github.com/gildas/go-errors v0.1.0
-	github.com/gildas/go-logger v1.3.4
-	github.com/gildas/go-request v0.2.4
-	github.com/google/uuid v1.1.1
-	github.com/stretchr/testify v1.4.0
-	github.com/youmark/pkcs8 v0.0.0-20200403053413-436114b17e7c
-	golang.org/x/crypto v0.0.0-20200406173513-056763e48d71 // indirect
-	golang.org/x/sys v0.0.0-20200406155108-e3b113bbe6a4 // indirect
-	google.golang.org/api v0.21.0 // indirect
-	google.golang.org/genproto v0.0.0-20200407120235-9eb9bb161a06 // indirect
-	google.golang.org/grpc v1.28.1 // indirect
+	github.com/gildas/go-logger v1.3.8
+	github.com/gildas/go-request v0.3.1
+	github.com/google/uuid v1.2.0
+	github.com/stretchr/testify v1.6.1
+	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a
+	golang.org/x/crypto v0.0.0-20210506145944-38f3c27a63bf // indirect
 )
