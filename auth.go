@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gildas/go-errors"
 	"github.com/gildas/go-request"
+	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/youmark/pkcs8"
 )
