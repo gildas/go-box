@@ -4,4 +4,4 @@ package box
 var commit string
 
 // VERSION is the version of this application
-var VERSION = "0.1.3" + commit
+var VERSION = "0.1.4" + commit
