@@ -50,10 +50,10 @@ type SharedLinkOptions struct {
 func (module *SharedLinks) Create(ctx context.Context, entry *FileEntry, options *SharedLinkOptions) (*SharedLink, error) {
 	//log := module.Client.Logger.Scope("createsharedlink")
 	if entry == nil {
-		return nil, errors.ArgumentMissing.With("entry").WithStack()
+		return nil, errors.ArgumentMissing.With("entry")
 	}
 	if len(entry.ID) == 0 {
-		return nil, errors.ArgumentMissing.With("id").WithStack()
+		return nil, errors.ArgumentMissing.With("id")
 	}
 	if options == nil {
 		options = &SharedLinkOptions{

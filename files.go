@@ -96,7 +96,7 @@ type DownloadOptions struct {
 func (module *Files) FindByID(ctx context.Context, fileID string) (*FileEntry, error) {
 	// query: fields=comma-separated list of fields to include in the response
 	if len(fileID) == 0 {
-		return nil, errors.ArgumentMissing.With("id").WithStack()
+		return nil, errors.ArgumentMissing.With("id")
 	}
 	if !module.Client.IsAuthenticated() {
 		return nil, errors.Unauthorized.WithStack()
@@ -112,10 +112,10 @@ func (module *Files) FindByID(ctx context.Context, fileID string) (*FileEntry, e
 // For now, exact match and 1 level (no recursion)
 func (module *Files) FindByName(ctx context.Context, name string, parent *PathEntry) (*FileEntry, error) {
 	if len(name) == 0 {
-		return nil, errors.ArgumentMissing.With("filename").WithStack()
+		return nil, errors.ArgumentMissing.With("filename")
 	}
 	if parent == nil || len(parent.ID) == 0 {
-		return nil, errors.ArgumentMissing.With("parent").WithStack()
+		return nil, errors.ArgumentMissing.With("parent")
 	}
 	if !module.Client.IsAuthenticated() {
 		return nil, errors.Unauthorized.WithStack()
@@ -124,7 +124,7 @@ func (module *Files) FindByName(ctx context.Context, name string, parent *PathEn
 	// First get the parent folder
 	folder, err := module.Client.Folders.FindByID(ctx, parent.ID)
 	if err != nil {
-		return nil, errors.ArgumentInvalid.With("parent", parent.ID).Wrap(err)
+		return nil, errors.ArgumentInvalid.With("parent", parent.ID).(errors.Error).Wrap(err)
 	}
 
 	name = strings.ToLower(name)
@@ -133,7 +133,7 @@ func (module *Files) FindByName(ctx context.Context, name string, parent *PathEn
 			return module.FindByID(ctx, item.ID)
 		}
 	}
-	return nil, errors.NotFound.With("filename", name).WithStack()
+	return nil, errors.NotFound.With("filename", name)
 }
 
 // MarshalJSON marshals this into JSON

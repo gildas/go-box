@@ -10,7 +10,7 @@ import (
 // sendRequest sends an HTTP request to Box.com's API
 func (client *Client) sendRequest(ctx context.Context, options *request.Options, results interface{}) (*request.ContentReader, error) {
 	if options == nil {
-		return nil, errors.ArgumentMissing.With("options").WithStack()
+		return nil, errors.ArgumentMissing.With("options")
 	}
 	options.Context = ctx
 	options.Logger = client.Logger
