@@ -8,7 +8,7 @@ import (
 )
 
 // Download download the content of a file (by its FileEntry)
-func (module *Files) Download(ctx context.Context, entry *FileEntry) (*request.ContentReader, error) {
+func (module *Files) Download(ctx context.Context, entry *FileEntry) (*request.Content, error) {
 	// query: version=string to get a specific version
 	if entry == nil || len(entry.ID) == 0 {
 		return nil, errors.ArgumentMissing.With("entry")
