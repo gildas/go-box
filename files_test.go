@@ -14,6 +14,7 @@ import (
 	"github.com/gildas/go-errors"
 	"github.com/gildas/go-logger"
 	"github.com/gildas/go-request"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -273,6 +274,7 @@ func (suite *FileSuite) TestShouldFailUploadingWhenNotAuthenticated() {
 // Suite Tools
 
 func (suite *FileSuite) SetupSuite() {
+	_ = godotenv.Load()
 	suite.Name = strings.TrimSuffix(reflect.TypeOf(*suite).Name(), "Suite")
 	suite.Logger = logger.Create("test",
 		&logger.FileStream{
