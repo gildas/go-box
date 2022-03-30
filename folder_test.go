@@ -13,6 +13,7 @@ import (
 	"github.com/gildas/go-core"
 	"github.com/gildas/go-errors"
 	"github.com/gildas/go-logger"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -160,6 +161,9 @@ func (suite *FolderSuite) TestShouldFailFindingWithMissingName() {
 }
 
 func (suite *FolderSuite) TestShouldFailFindingWhenNotAuthenticated() {
+	tokenBackup := suite.Client.Auth.Token
+	defer func() { suite.Client.Auth.Token = tokenBackup }()
+
 	if suite.Client.IsAuthenticated() {
 		suite.Client.Auth.Token = nil
 	}
@@ -183,6 +187,7 @@ func (suite *FolderSuite) TestShouldFailUnmarshalingFolderWithInvalidJSON() {
 // Suite Tools
 
 func (suite *FolderSuite) SetupSuite() {
+	_ = godotenv.Load()
 	suite.Name = strings.TrimSuffix(reflect.TypeOf(*suite).Name(), "Suite")
 	suite.Logger = logger.Create("test",
 		&logger.FileStream{

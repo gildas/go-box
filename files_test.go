@@ -14,6 +14,7 @@ import (
 	"github.com/gildas/go-errors"
 	"github.com/gildas/go-logger"
 	"github.com/gildas/go-request"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -49,7 +50,7 @@ func (suite *FileSuite) TestCanDownload() {
 	suite.Require().Nilf(err, "Failed downloading a file. Error: %s", err)
 	suite.Require().NotNil(downloaded, "Content should not be nil")
 	suite.Assert().Equal("text/plain", downloaded.Type)
-	suite.Assert().Equal(int64(13), downloaded.Length)
+	suite.Assert().Equal(uint64(13), downloaded.Length)
 }
 
 func (suite *FileSuite) TestCanUploadWithPayload() {
@@ -216,7 +217,13 @@ func (suite *FileSuite) TestShouldFailUploadingWithoutOptions() {
 }
 
 func (suite *FileSuite) TestShouldFailUploadingWithoutFilename() {
-	_, err := suite.Client.Files.Upload(context.Background(), &box.UploadOptions{})
+	_, err := suite.Client.Files.Upload(context.Background(), &box.UploadOptions{
+		Parent:   suite.Root.AsPathEntry(),
+		Payload: struct {
+			ID      string `json:"id"`
+			Message string `json:"message"`
+		}{"1234", "Hello, World"},
+	})
 	suite.Require().NotNil(err, "Should have failed uploading file")
 	suite.Assert().Truef(errors.Is(err, errors.ArgumentMissing), "Errors should be an Argument Missing Error. Error: %v", err)
 	var details *errors.Error
@@ -273,6 +280,7 @@ func (suite *FileSuite) TestShouldFailUploadingWhenNotAuthenticated() {
 // Suite Tools
 
 func (suite *FileSuite) SetupSuite() {
+	_ = godotenv.Load()
 	suite.Name = strings.TrimSuffix(reflect.TypeOf(*suite).Name(), "Suite")
 	suite.Logger = logger.Create("test",
 		&logger.FileStream{
