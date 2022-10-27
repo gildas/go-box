@@ -41,8 +41,8 @@ func (suite *SharedLinkSuite) SetupSuite() {
 	suite.Name = strings.TrimSuffix(reflect.TypeOf(suite).Elem().Name(), "Suite")
 	suite.Logger = logger.Create("test",
 		&logger.FileStream{
-			Path:        fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
-			Unbuffered:  true,
+			Path:         fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
+			Unbuffered:   true,
 			SourceInfo:   true,
 			FilterLevels: logger.NewLevelSet(logger.TRACE),
 		},

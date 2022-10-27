@@ -40,8 +40,8 @@ func (suite *FileSuite) SetupSuite() {
 	suite.Name = strings.TrimSuffix(reflect.TypeOf(suite).Elem().Name(), "Suite")
 	suite.Logger = logger.Create("test",
 		&logger.FileStream{
-			Path:        fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
-			Unbuffered:  true,
+			Path:         fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
+			Unbuffered:   true,
 			SourceInfo:   true,
 			FilterLevels: logger.NewLevelSet(logger.TRACE),
 		},
@@ -316,7 +316,7 @@ func (suite *FileSuite) TestShouldFailUploadingWithoutOptions() {
 
 func (suite *FileSuite) TestShouldFailUploadingWithoutFilename() {
 	_, err := suite.Client.Files.Upload(context.Background(), &box.UploadOptions{
-		Parent:   suite.Root.AsPathEntry(),
+		Parent: suite.Root.AsPathEntry(),
 		Payload: struct {
 			ID      string `json:"id"`
 			Message string `json:"message"`
