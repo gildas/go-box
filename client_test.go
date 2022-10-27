@@ -28,6 +28,70 @@ func TestClientSuite(t *testing.T) {
 	suite.Run(t, new(ClientSuite))
 }
 
+// *****************************************************************************
+// Suite Tools
+
+func (suite *ClientSuite) SetupSuite() {
+	_ = godotenv.Load()
+	suite.Name = strings.TrimSuffix(reflect.TypeOf(suite).Elem().Name(), "Suite")
+	suite.Logger = logger.Create("test",
+		&logger.FileStream{
+			Path:        fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
+			Unbuffered:  true,
+			SourceInfo:   true,
+			FilterLevels: logger.NewLevelSet(logger.TRACE),
+		},
+	).Child("test", "test")
+	suite.Logger.Infof("Suite Start: %s %s", suite.Name, strings.Repeat("=", 80-14-len(suite.Name)))
+}
+
+func (suite *ClientSuite) TearDownSuite() {
+	if suite.T().Failed() {
+		suite.Logger.Warnf("At least one test failed, we are not cleaning")
+		suite.T().Log("At least one test failed, we are not cleaning")
+	} else {
+		suite.Logger.Infof("All tests succeeded, we are cleaning")
+	}
+	suite.Logger.Infof("Suite End: %s %s", suite.Name, strings.Repeat("=", 80-12-len(suite.Name)))
+	suite.Logger.Close()
+}
+
+func (suite *ClientSuite) BeforeTest(suiteName, testName string) {
+	suite.Logger.Infof("Test Start: %s %s", testName, strings.Repeat("-", 80-13-len(testName)))
+	suite.Start = time.Now()
+}
+
+func (suite *ClientSuite) AfterTest(suiteName, testName string) {
+	duration := time.Since(suite.Start)
+	suite.Logger.Record("duration", duration.String()).Infof("Test End: %s %s", testName, strings.Repeat("-", 80-11-len(testName)))
+}
+
+func (suite *ClientSuite) FetchCredentials() box.Credentials {
+	suite.Logger.Infof("Fetching credentials from environment")
+	var credentials box.Credentials
+
+	config := core.GetEnvAsString("BOX_CONFIG", "")
+	if len(config) > 0 {
+		suite.Logger.Debugf("Found BOX_CONFIG")
+		err := json.Unmarshal([]byte(config), &credentials)
+		suite.Require().Nil(err, "Failed to unmarshal BOX_CONFIG")
+	} else {
+		credentials = box.Credentials{
+			ClientID:     core.GetEnvAsString("BOX_CLIENTID", ""),
+			ClientSecret: core.GetEnvAsString("BOX_CLIENTSECRET", ""),
+			EnterpriseID: core.GetEnvAsString("BOX_ENTERPRISEID", ""),
+			AppAuth: box.AppAuth{
+				PublicKeyID: core.GetEnvAsString("BOX_PUBLICKEYID", ""),
+				PrivateKey:  core.GetEnvAsString("BOX_PRIVATEKEY", ""),
+				Passphrase:  core.GetEnvAsString("BOX_PASSPHRASE", ""),
+			},
+		}
+	}
+	return credentials
+}
+
+// *****************************************************************************
+
 func (suite *ClientSuite) TestCanCreateClient() {
 	client := box.NewClient(suite.Logger.ToContext(context.Background()))
 	suite.Require().NotNil(client)
@@ -202,64 +266,4 @@ func (suite *ClientSuite) TestShouldFailAuthenticatingWithInvalidClientID() {
 	suite.Assert().True(errors.Is(err, errors.Unauthorized), "Error should be an Unauthorized Error. Error: %s", err)
 	suite.Assert().True(errors.Is(err, box.InvalidGrant), "Error should be an Invalid Grant Error. Error: %v", err)
 	suite.Logger.Errorf("Expected error", err)
-}
-
-// Suite Tools
-
-func (suite *ClientSuite) SetupSuite() {
-	_ = godotenv.Load()
-	suite.Name = strings.TrimSuffix(reflect.TypeOf(*suite).Name(), "Suite")
-	suite.Logger = logger.Create("test",
-		&logger.FileStream{
-			Path:        fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
-			Unbuffered:  true,
-			FilterLevel: logger.TRACE,
-		},
-	).Child("test", "test")
-	suite.Logger.Infof("Suite Start: %s %s", suite.Name, strings.Repeat("=", 80-14-len(suite.Name)))
-}
-
-func (suite *ClientSuite) TearDownSuite() {
-	if suite.T().Failed() {
-		suite.Logger.Warnf("At least one test failed, we are not cleaning")
-		suite.T().Log("At least one test failed, we are not cleaning")
-	} else {
-		suite.Logger.Infof("All tests succeeded, we are cleaning")
-	}
-	suite.Logger.Infof("Suite End: %s %s", suite.Name, strings.Repeat("=", 80-12-len(suite.Name)))
-	suite.Logger.Close()
-}
-
-func (suite *ClientSuite) BeforeTest(suiteName, testName string) {
-	suite.Logger.Infof("Test Start: %s %s", testName, strings.Repeat("-", 80-13-len(testName)))
-	suite.Start = time.Now()
-}
-
-func (suite *ClientSuite) AfterTest(suiteName, testName string) {
-	duration := time.Since(suite.Start)
-	suite.Logger.Record("duration", duration.String()).Infof("Test End: %s %s", testName, strings.Repeat("-", 80-11-len(testName)))
-}
-
-func (suite *ClientSuite) FetchCredentials() box.Credentials {
-	suite.Logger.Infof("Fetching credentials from environment")
-	var credentials box.Credentials
-
-	config := core.GetEnvAsString("BOX_CONFIG", "")
-	if len(config) > 0 {
-		suite.Logger.Debugf("Found BOX_CONFIG")
-		err := json.Unmarshal([]byte(config), &credentials)
-		suite.Require().Nil(err, "Failed to unmarshal BOX_CONFIG")
-	} else {
-		credentials = box.Credentials{
-			ClientID:     core.GetEnvAsString("BOX_CLIENTID", ""),
-			ClientSecret: core.GetEnvAsString("BOX_CLIENTSECRET", ""),
-			EnterpriseID: core.GetEnvAsString("BOX_ENTERPRISEID", ""),
-			AppAuth: box.AppAuth{
-				PublicKeyID: core.GetEnvAsString("BOX_PUBLICKEYID", ""),
-				PrivateKey:  core.GetEnvAsString("BOX_PRIVATEKEY", ""),
-				Passphrase:  core.GetEnvAsString("BOX_PASSPHRASE", ""),
-			},
-		}
-	}
-	return credentials
 }

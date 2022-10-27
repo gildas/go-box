@@ -33,6 +33,104 @@ func TestSharedLinkSuite(t *testing.T) {
 	suite.Run(t, new(SharedLinkSuite))
 }
 
+// *****************************************************************************
+// Suite Tools
+
+func (suite *SharedLinkSuite) SetupSuite() {
+	_ = godotenv.Load()
+	suite.Name = strings.TrimSuffix(reflect.TypeOf(suite).Elem().Name(), "Suite")
+	suite.Logger = logger.Create("test",
+		&logger.FileStream{
+			Path:        fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
+			Unbuffered:  true,
+			SourceInfo:   true,
+			FilterLevels: logger.NewLevelSet(logger.TRACE),
+		},
+	).Child("test", "test")
+	suite.Logger.Infof("Suite Start: %s %s", suite.Name, strings.Repeat("=", 80-14-len(suite.Name)))
+}
+
+func (suite *SharedLinkSuite) TearDownSuite() {
+	if suite.T().Failed() {
+		suite.Logger.Warnf("At least one test failed, we are not cleaning")
+		suite.T().Log("At least one test failed, we are not cleaning")
+	} else {
+		suite.Logger.Infof("All tests succeeded, we are cleaning")
+		folder, err := suite.Client.Folders.FindByName(context.Background(), "unit-test")
+		if err == nil {
+			err := suite.Client.Folders.Delete(context.Background(), folder)
+			suite.Assert().Nilf(err, "Failed deleting root folder. Error: %s", err)
+		}
+	}
+	suite.Logger.Infof("Suite End: %s %s", suite.Name, strings.Repeat("=", 80-12-len(suite.Name)))
+	suite.Logger.Close()
+}
+
+func (suite *SharedLinkSuite) BeforeTest(suiteName, testName string) {
+	var err error
+
+	suite.Logger.Infof("Test Start: %s %s", testName, strings.Repeat("-", 80-13-len(testName)))
+	suite.Start = time.Now()
+
+	if suite.Client == nil {
+		suite.Logger.Infof("Creating a new box.Client")
+		suite.Client = box.NewClient(suite.Logger.ToContext(context.Background()))
+	}
+	if !suite.Client.IsAuthenticated() {
+		err = suite.Client.Auth.Authenticate(context.Background(), suite.FetchCredentials())
+		suite.Require().Nil(err, "Failed to authenticate box.Client")
+	}
+
+	if suite.Root == nil {
+		suite.Root, err = suite.Client.Folders.FindByName(context.Background(), "unit-test")
+		if err != nil {
+			suite.Root, err = suite.Client.Folders.Create(context.Background(), &box.FolderEntry{
+				Name: "unit-test",
+			})
+		}
+		suite.Require().Nilf(err, "Failed creating root folder. Error: %s", err)
+	}
+}
+
+func (suite *SharedLinkSuite) AfterTest(suiteName, testName string) {
+	duration := time.Since(suite.Start)
+	suite.Logger.Record("duration", duration.String()).Infof("Test End: %s %s", testName, strings.Repeat("-", 80-11-len(testName)))
+	if suite.Root != nil {
+		if !suite.Client.IsAuthenticated() {
+			err := suite.Client.Auth.Authenticate(context.Background(), suite.FetchCredentials())
+			suite.Require().Nil(err, "Failed to authenticate box.Client")
+		}
+		err := suite.Client.Folders.Delete(context.Background(), suite.Root)
+		suite.Assert().Nilf(err, "Failed deleting root folder. Error: %s", err)
+		suite.Root = nil
+	}
+}
+
+// *****************************************************************************
+
+func (suite *SharedLinkSuite) FetchCredentials() box.Credentials {
+	suite.Logger.Infof("Fetching credentials from environment")
+	var credentials box.Credentials
+
+	config := core.GetEnvAsString("BOX_CONFIG", "")
+	if len(config) > 0 {
+		suite.Logger.Debugf("Found BOX_CONFIG")
+		err := json.Unmarshal([]byte(config), &credentials)
+		suite.Require().Nil(err, "Failed to unmarshal BOX_CONFIG")
+	} else {
+		credentials = box.Credentials{
+			ClientID:     core.GetEnvAsString("BOX_CLIENTID", ""),
+			ClientSecret: core.GetEnvAsString("BOX_CLIENTSECRET", ""),
+			EnterpriseID: core.GetEnvAsString("BOX_ENTERPRISEID", ""),
+			AppAuth: box.AppAuth{
+				PublicKeyID: core.GetEnvAsString("BOX_PUBLICKEYID", ""),
+				PrivateKey:  core.GetEnvAsString("BOX_PRIVATEKEY", ""),
+				Passphrase:  core.GetEnvAsString("BOX_PASSPHRASE", ""),
+			},
+		}
+	}
+	return credentials
+}
 func (suite *SharedLinkSuite) TestCanMarshalSharedLinkOptions() {
 	slo := box.SharedLinkOptions{
 		Access: "read",
@@ -129,99 +227,4 @@ func (suite *SharedLinkSuite) TestShouldFailCreatingWhenNotAuthenticated() {
 	_, err := suite.Client.SharedLinks.Create(context.Background(), entry, nil)
 	suite.Require().NotNil(err, "Should have failed sharing link")
 	suite.Assert().Truef(errors.Is(err, errors.Unauthorized), "Errors should be an Unauthorized Error. Error: %v", err)
-}
-
-// Suite Tools
-
-func (suite *SharedLinkSuite) SetupSuite() {
-	_ = godotenv.Load()
-	suite.Name = strings.TrimSuffix(reflect.TypeOf(*suite).Name(), "Suite")
-	suite.Logger = logger.Create("test",
-		&logger.FileStream{
-			Path:        fmt.Sprintf("./log/test-%s.log", strings.ToLower(suite.Name)),
-			Unbuffered:  true,
-			FilterLevel: logger.TRACE,
-		},
-	).Child("test", "test")
-	suite.Logger.Infof("Suite Start: %s %s", suite.Name, strings.Repeat("=", 80-14-len(suite.Name)))
-}
-
-func (suite *SharedLinkSuite) TearDownSuite() {
-	if suite.T().Failed() {
-		suite.Logger.Warnf("At least one test failed, we are not cleaning")
-		suite.T().Log("At least one test failed, we are not cleaning")
-	} else {
-		suite.Logger.Infof("All tests succeeded, we are cleaning")
-		folder, err := suite.Client.Folders.FindByName(context.Background(), "unit-test")
-		if err == nil {
-			err := suite.Client.Folders.Delete(context.Background(), folder)
-			suite.Assert().Nilf(err, "Failed deleting root folder. Error: %s", err)
-		}
-	}
-	suite.Logger.Infof("Suite End: %s %s", suite.Name, strings.Repeat("=", 80-12-len(suite.Name)))
-	suite.Logger.Close()
-}
-
-func (suite *SharedLinkSuite) BeforeTest(suiteName, testName string) {
-	var err error
-
-	suite.Logger.Infof("Test Start: %s %s", testName, strings.Repeat("-", 80-13-len(testName)))
-	suite.Start = time.Now()
-
-	if suite.Client == nil {
-		suite.Logger.Infof("Creating a new box.Client")
-		suite.Client = box.NewClient(suite.Logger.ToContext(context.Background()))
-	}
-	if !suite.Client.IsAuthenticated() {
-		err = suite.Client.Auth.Authenticate(context.Background(), suite.FetchCredentials())
-		suite.Require().Nil(err, "Failed to authenticate box.Client")
-	}
-
-	if suite.Root == nil {
-		suite.Root, err = suite.Client.Folders.FindByName(context.Background(), "unit-test")
-		if err != nil {
-			suite.Root, err = suite.Client.Folders.Create(context.Background(), &box.FolderEntry{
-				Name: "unit-test",
-			})
-		}
-		suite.Require().Nilf(err, "Failed creating root folder. Error: %s", err)
-	}
-}
-
-func (suite *SharedLinkSuite) AfterTest(suiteName, testName string) {
-	duration := time.Since(suite.Start)
-	suite.Logger.Record("duration", duration.String()).Infof("Test End: %s %s", testName, strings.Repeat("-", 80-11-len(testName)))
-	if suite.Root != nil {
-		if !suite.Client.IsAuthenticated() {
-			err := suite.Client.Auth.Authenticate(context.Background(), suite.FetchCredentials())
-			suite.Require().Nil(err, "Failed to authenticate box.Client")
-		}
-		err := suite.Client.Folders.Delete(context.Background(), suite.Root)
-		suite.Assert().Nilf(err, "Failed deleting root folder. Error: %s", err)
-		suite.Root = nil
-	}
-}
-
-func (suite *SharedLinkSuite) FetchCredentials() box.Credentials {
-	suite.Logger.Infof("Fetching credentials from environment")
-	var credentials box.Credentials
-
-	config := core.GetEnvAsString("BOX_CONFIG", "")
-	if len(config) > 0 {
-		suite.Logger.Debugf("Found BOX_CONFIG")
-		err := json.Unmarshal([]byte(config), &credentials)
-		suite.Require().Nil(err, "Failed to unmarshal BOX_CONFIG")
-	} else {
-		credentials = box.Credentials{
-			ClientID:     core.GetEnvAsString("BOX_CLIENTID", ""),
-			ClientSecret: core.GetEnvAsString("BOX_CLIENTSECRET", ""),
-			EnterpriseID: core.GetEnvAsString("BOX_ENTERPRISEID", ""),
-			AppAuth: box.AppAuth{
-				PublicKeyID: core.GetEnvAsString("BOX_PUBLICKEYID", ""),
-				PrivateKey:  core.GetEnvAsString("BOX_PRIVATEKEY", ""),
-				Passphrase:  core.GetEnvAsString("BOX_PASSPHRASE", ""),
-			},
-		}
-	}
-	return credentials
 }
