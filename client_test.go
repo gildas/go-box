@@ -134,15 +134,15 @@ func (suite *ClientSuite) TestCanUnmarshalCredentials() {
 	var credentials box.Credentials
 	config := `{
 		"boxAppSettings": {
-		  "clientID": "someclientid",
+		  "clientId": "someclientid",
 		  "clientSecret": "somesecret",
 		  "appAuth": {
-			"publicKeyID": "deadbeef",
+			"publicKeyId": "deadbeef",
 			"privateKey": "-----BEGIN ENCRYPTED PRIVATE KEY-----\nzzz=\n-----END ENCRYPTED PRIVATE KEY-----\n",
 			"passphrase": "somepassprase"
 		  }
 		},
-		"enterpriseID": "12345678"
+		"enterpriseId": "12345678"
 	}`
 	err := json.Unmarshal([]byte(config), &credentials)
 	suite.Require().Nil(err, "Failed to unmarshal a box.Credentials")
@@ -153,7 +153,7 @@ func (suite *ClientSuite) TestCanUnmarshalCredentials() {
 
 func (suite *ClientSuite) TestShouldFailUnmarshalingCredentialsWithInvalidJSON() {
 	var credentials box.Credentials
-	config := `{"enterpriseID": 8}`
+	config := `{"enterpriseId": 8}`
 	err := json.Unmarshal([]byte(config), &credentials)
 	suite.Require().NotNil(err, "Should have failed unmarshaling")
 	suite.Assert().Truef(errors.Is(err, errors.JSONUnmarshalError), "Error should be an JSON Unmarshal Error. Error: %+v", err)
@@ -260,7 +260,7 @@ func (suite *ClientSuite) TestShouldFailAuthenticatingWithInvalidClientID() {
 	client := box.NewClient(suite.Logger.ToContext(context.Background()))
 	suite.Require().NotNil(client)
 	credentials := suite.FetchCredentials()
-	credentials.ClientID = "Invalid ClientID"
+	credentials.ClientID = "Invalid ClientId"
 	err := client.Auth.Authenticate(context.Background(), credentials)
 	suite.Require().NotNil(err, "Should have Failed to authenticate box.Client")
 	suite.Assert().True(errors.Is(err, errors.Unauthorized), "Error should be an Unauthorized Error. Error: %s", err)
