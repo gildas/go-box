@@ -28,15 +28,15 @@ type boxClaims struct {
 
 // Credentials represents the Authentication information
 type Credentials struct {
-	ClientID     string  `json:"clientID"`
+	ClientID     string  `json:"clientId"`
 	ClientSecret string  `json:"clientSecret"`
 	AppAuth      AppAuth `json:"appAuth"`
-	EnterpriseID string  `json:"enterpriseID,omitempty"`
+	EnterpriseID string  `json:"enterpriseId,omitempty"`
 }
 
 // AppAuth is used to authenticate an application
 type AppAuth struct {
-	PublicKeyID string `json:"publickeyID"`
+	PublicKeyID string `json:"publickeyId"`
 	PrivateKey  string `json:"privateKey"`
 	Passphrase  string `json:"passphrase"`
 }
@@ -99,7 +99,7 @@ func (creds *Credentials) MarshalJSON() ([]byte, error) {
 	type surrogate Credentials
 	payload := struct {
 		AppSettings  surrogate `json:"boxAppSettings"`
-		EnterpriseID string    `json:"enterpriseID"`
+		EnterpriseID string    `json:"enterpriseId"`
 	}{
 		AppSettings:  surrogate(*creds),
 		EnterpriseID: creds.EnterpriseID,
@@ -113,7 +113,7 @@ func (creds *Credentials) UnmarshalJSON(payload []byte) (err error) {
 	type surrogate Credentials
 	var data = struct {
 		AppSettings  surrogate `json:"boxAppSettings"`
-		EnterpriseID string    `json:"enterpriseID"`
+		EnterpriseID string    `json:"enterpriseId"`
 	}{}
 	if err = json.Unmarshal(payload, &data); err != nil {
 		return errors.JSONUnmarshalError.Wrap(err)
